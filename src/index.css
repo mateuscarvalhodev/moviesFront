@@ -1,33 +1,152 @@
+@import "tailwindcss";
+
+/* =========================
+   1) Light Theme
+========================= */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* Purple 1-12 */
+  --purple-1: #fefcfe;
+  --purple-2: #fbf7fe;
+  --purple-3: #f7edfe;
+  --purple-4: #f2e2fc;
+  --purple-5: #ead5f9;
+  --purple-6: #e0c4f4;
+  --purple-7: #d1afec;
+  --purple-8: #be93e4;
+  --purple-9: #8e4ec6;
+  --purple-10: #8347b9;
+  --purple-11: #8145b5;
+  --purple-12: #402060;
 
+  /* Mauve 1-12 */
+  --mauve-1: #fdfcfd;
+  --mauve-2: #faf9fb;
+  --mauve-3: #f2eff3;
+  --mauve-4: #eae7ec;
+  --mauve-5: #e3dfe6;
+  --mauve-6: #dbd8e0;
+  --mauve-7: #d0cdd7;
+  --mauve-8: #bcbac7;
+  --mauve-9: #8e8c99;
+  --mauve-10: #84828e;
+  --mauve-11: #65636d;
+  --mauve-12: #211f26;
+
+  /* Tokens light */
+  --bg: var(--mauve-1);
+  --bg-elev: var(--mauve-2);
+  --fg: var(--mauve-12);
+  --muted: var(--mauve-9);
+  --brand: var(--purple-9);
+  --brand-cta: var(--purple-10);
+  --focus: var(--purple-10);
+
+  /* Melhor suporte para scrollbar/form controls */
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+}
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* =========================
+   2) Dark Theme
+========================= */
+:root[data-theme="dark"] {
+  /* Purple Dark 1-12 */
+  --purple-1: #18111b;
+  --purple-2: #1e1523;
+  --purple-3: #3d224e;
+  --purple-4: #3d224e;
+  --purple-5: #48295c;
+  --purple-6: #54346b;
+  --purple-7: #664282;
+  --purple-8: #8457aa;
+  --purple-9: #8e4ec6;
+  --purple-10: #9a5cd0;
+  --purple-11: #d19dff;
+  --purple-12: #ecd9fa;
+
+  /* Mauve Dark 1-12 */
+  --mauve-1: #121113;
+  --mauve-2: #1a191b;
+  --mauve-3: #232225;
+  --mauve-4: #2b292d;
+  --mauve-5: #323035;
+  --mauve-6: #3c393f;
+  --mauve-7: #49474e;
+  --mauve-8: #625f69;
+  --mauve-9: #6f6d78;
+  --mauve-10: #7c7a85;
+  --mauve-11: #b5b2bc;
+  --mauve-12: #eeeef0;
+
+  /* Tokens dark */
+  --bg: var(--mauve-1);
+  --bg-elev: var(--mauve-2);
+  --fg: var(--mauve-12);
+  --muted: var(--mauve-10);
+  --brand: var(--purple-9);
+  --brand-cta: var(--purple-10);
+  --focus: var(--purple-10);
+}
+
+/* =========================
+   3) Tailwind Theme Mapping
+========================= */
+@theme {
+  /* Tokens semânticos */
+  --color-bg: var(--bg);
+  --color-bg-elev: var(--bg-elev);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-cta: var(--brand-cta);
+  --color-focus: var(--focus);
+
+  /* Purple escala */
+  --color-purple-1: var(--purple-1);
+  --color-purple-2: var(--purple-2);
+  --color-purple-3: var(--purple-3);
+  --color-purple-4: var(--purple-4);
+  --color-purple-5: var(--purple-5);
+  --color-purple-6: var(--purple-6);
+  --color-purple-7: var(--purple-7);
+  --color-purple-8: var(--purple-8);
+  --color-purple-9: var(--purple-9);
+  --color-purple-10: var(--purple-10);
+  --color-purple-11: var(--purple-11);
+  --color-purple-12: var(--purple-12);
+
+  /* Mauve escala */
+  --color-mauve-1: var(--mauve-1);
+  --color-mauve-2: var(--mauve-2);
+  --color-mauve-3: var(--mauve-3);
+  --color-mauve-4: var(--mauve-4);
+  --color-mauve-5: var(--mauve-5);
+  --color-mauve-6: var(--mauve-6);
+  --color-mauve-7: var(--mauve-7);
+  --color-mauve-8: var(--mauve-8);
+  --color-mauve-9: var(--mauve-9);
+  --color-mauve-10: var(--mauve-10);
+  --color-mauve-11: var(--mauve-11);
+  --color-mauve-12: var(--mauve-12);
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--brand);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  color: var(--brand-cta);
 }
 
 h1 {
@@ -42,27 +161,15 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--bg-elev);
+  color: var(--fg);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, background-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: var(--brand);
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+  outline: 4px auto var(--focus);
 }
