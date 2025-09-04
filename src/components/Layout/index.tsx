@@ -1,8 +1,9 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 import backgroundMovies from "@/assets/backgroundMovies.png";
 import logoMovies from "@/assets/logoMovies.png";
+import type { ReactNode } from "react";
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="relative isolate min-h-dvh flex flex-col bg-bg text-fg">
       <div className="absolute inset-0 z-0">

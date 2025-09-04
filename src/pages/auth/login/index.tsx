@@ -1,7 +1,5 @@
-import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import {
   Form,
   FormField,
@@ -12,17 +10,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { AppButton } from "@/components/Button";
-
 import { loginSchema, type LoginValues, type LoginProps } from "./types";
 import { Link } from "react-router";
 
-export const Login: React.FC<LoginProps> = ({
+export const Login = ({
   onSubmit,
   isLoading = false,
   forgotHref = "#",
   defaultValues,
   error,
-}) => {
+}: LoginProps) => {
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     mode: "onChange",
@@ -40,11 +37,7 @@ export const Login: React.FC<LoginProps> = ({
   }
 
   return (
-    <div
-      className="
-        mx-auto w-[min(80vw,600px)] max-w-none rounded-2xl border border-white/10 bg-bg-elev/95 p-6 sm:p-8 shadow-xl backdrop-blur-sm
-"
-    >
+    <div className="mx-auto w-[min(80vw,600px)] max-w-none rounded-2xl border border-white/10 bg-bg-elev/95 p-6 sm:p-8 shadow-xl backdrop-blur-sm">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <FormField
@@ -87,15 +80,21 @@ export const Login: React.FC<LoginProps> = ({
           />
 
           <div className="mt-2 flex items-center justify-between gap-4">
-            <a
-              href={forgotHref}
-              className="text-sm text-brand hover:text-brand-cta underline-offset-4 hover:underline"
-            >
-              <p className="mt-6 text-center text-sm">
-                <span className="text-muted">Ainda não possui conta? </span>
-                <Link to={"/auth/register"}>Registrar</Link>
-              </p>
-            </a>
+            {forgotHref.startsWith("/") ? (
+              <Link
+                to={forgotHref}
+                className="text-sm text-brand hover:text-brand-cta underline-offset-4 hover:underline"
+              >
+                Esqueci minha senha
+              </Link>
+            ) : (
+              <a
+                href={forgotHref}
+                className="text-sm text-brand hover:text-brand-cta underline-offset-4 hover:underline"
+              >
+                Esqueci minha senha
+              </a>
+            )}
 
             <AppButton type="submit" disabled={!canSubmit} className="min-w-32">
               {isLoading || submitting ? "Entrando..." : "Entrar"}
@@ -105,6 +104,16 @@ export const Login: React.FC<LoginProps> = ({
           {error ? (
             <p className="text-sm text-red-400/90 mt-1">{error}</p>
           ) : null}
+
+          <p className="mt-6 text-center text-sm">
+            <span className="text-muted">Ainda não possui conta? </span>
+            <Link
+              to="/auth/register"
+              className="text-brand hover:text-brand-cta font-medium"
+            >
+              Registrar
+            </Link>
+          </p>
         </form>
       </Form>
     </div>
