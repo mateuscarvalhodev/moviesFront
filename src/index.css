@@ -1,8 +1,5 @@
 @import "tailwindcss";
 
-/* =========================
-   1) Light Theme
-========================= */
 :root {
   /* Purple 1-12 */
   --purple-1: #fefcfe;
@@ -41,13 +38,9 @@
   --brand-cta: var(--purple-10);
   --focus: var(--purple-10);
 
-  /* Melhor suporte para scrollbar/form controls */
   color-scheme: light dark;
 }
 
-/* =========================
-   2) Dark Theme
-========================= */
 :root[data-theme="dark"] {
   /* Purple Dark 1-12 */
   --purple-1: #18111b;
@@ -87,9 +80,6 @@
   --focus: var(--purple-10);
 }
 
-/* =========================
-   3) Tailwind Theme Mapping
-========================= */
 @theme {
   /* Tokens semânticos */
   --color-bg: var(--bg);
