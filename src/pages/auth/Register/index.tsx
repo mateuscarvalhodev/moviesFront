@@ -18,6 +18,7 @@ import {
   type RegisterValues,
   type RegisterProps,
 } from "./types";
+import { Link } from "react-router";
 
 export const Register: React.FC<RegisterProps> = ({
   onSubmit,
@@ -44,7 +45,7 @@ export const Register: React.FC<RegisterProps> = ({
   }
 
   return (
-    <div className="mx-auto w-[min(92vw,800px)] max-w-none rounded-2xl border border-white/10 bg-bg-elev/95 p-6 sm:p-8 shadow-xl backdrop-blur-sm">
+    <div className="mx-auto w-[min(92vw,600px)] max-w-none rounded-2xl border border-white/10 bg-bg-elev/95 p-6 sm:p-8 shadow-xl backdrop-blur-sm">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <FormField
@@ -66,7 +67,6 @@ export const Register: React.FC<RegisterProps> = ({
             )}
           />
 
-          {/* E-mail */}
           <FormField
             control={form.control}
             name="email"
@@ -87,7 +87,6 @@ export const Register: React.FC<RegisterProps> = ({
             )}
           />
 
-          {/* Senha */}
           <FormField
             control={form.control}
             name="password"
@@ -130,10 +129,27 @@ export const Register: React.FC<RegisterProps> = ({
             )}
           />
 
-          <div className="flex justify-end">
-            <AppButton type="submit" disabled={!canSubmit} className="min-w-36">
-              {isLoading || submitting ? "Cadastrando..." : "Cadastrar"}
-            </AppButton>
+          <div className="flex justify-between">
+            <div>
+              <p className="mt-6 text-center text-sm">
+                <span className="text-muted">Já possui conta? </span>
+                <Link
+                  to="/auth/login"
+                  className="text-brand hover:text-brand-cta font-medium"
+                >
+                  Logar
+                </Link>
+              </p>
+            </div>
+            <div>
+              <AppButton
+                type="submit"
+                disabled={!canSubmit}
+                className="min-w-36"
+              >
+                {isLoading || submitting ? "Cadastrando..." : "Cadastrar"}
+              </AppButton>
+            </div>
           </div>
 
           {error ? (

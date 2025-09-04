@@ -1,13 +1,13 @@
-import { Login } from "./components/auth/Login";
-import { Register } from "./components/auth/Register";
+// import { Login } from "./pages/auth/login";
+// import { Register } from "./pages/auth/Register";
 
-function App() {
-  return (
-    <>
-      <Login />
-      {/* <Register /> */}
-    </>
-  );
-}
+// function App() {
+//   return (
+//     <>
+//       <Login />
+//       <Register />
+//     </>
+//   );
+// }
 
-export default App;
+// export default App;

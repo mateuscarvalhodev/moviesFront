@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-/** username OU e-mail válido */
 export const loginSchema = z.object({
   identifier: z
     .string()

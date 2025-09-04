@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { AppButton } from "@/components/Button";
 
 import { loginSchema, type LoginValues, type LoginProps } from "./types";
+import { Link } from "react-router";
 
 export const Login: React.FC<LoginProps> = ({
   onSubmit,
@@ -85,13 +86,15 @@ export const Login: React.FC<LoginProps> = ({
             )}
           />
 
-          {/* Link + botão */}
           <div className="mt-2 flex items-center justify-between gap-4">
             <a
               href={forgotHref}
               className="text-sm text-brand hover:text-brand-cta underline-offset-4 hover:underline"
             >
-              Esqueci minha senha
+              <p className="mt-6 text-center text-sm">
+                <span className="text-muted">Ainda não possui conta? </span>
+                <Link to={"/auth/register"}>Registrar</Link>
+              </p>
             </a>
 
             <AppButton type="submit" disabled={!canSubmit} className="min-w-32">
@@ -99,7 +102,6 @@ export const Login: React.FC<LoginProps> = ({
             </AppButton>
           </div>
 
-          {/* Erro global opcional */}
           {error ? (
             <p className="text-sm text-red-400/90 mt-1">{error}</p>
           ) : null}
