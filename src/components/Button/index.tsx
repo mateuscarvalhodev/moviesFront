@@ -23,9 +23,9 @@ const appButtonVariants = cva("select-none transition-colors", {
       ),
     },
     size: {
-      sm: "h-9 px-3 rounded-md",
-      md: "h-10 px-4 rounded-lg",
-      lg: "h-11 px-5 rounded-lg",
+      sm: "h-9 px-3 rounded-sm",
+      md: "h-10 px-4 rounded",
+      lg: "h-11 px-5 rounded",
     },
     full: {
       true: "w-full",

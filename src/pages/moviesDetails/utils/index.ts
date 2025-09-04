@@ -13,3 +13,19 @@ export const moneyUSD = (n?: number): string => {
     maximumFractionDigits: 0,
   });
 };
+
+export function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+export function normalizeRatingPercent(rating?: number | null): number | null {
+  if (rating == null || Number.isNaN(rating)) return null;
+  return clamp(Math.round(rating), 0, 100);
+}
+
+export function getCircleProgress(radius: number, percent: number) {
+  const circumference = 2 * Math.PI * radius;
+  const filled = (percent / 100) * circumference;
+  const dashArray = `${filled} ${circumference - filled}`;
+  return { circumference, dashArray, filled };
+}
