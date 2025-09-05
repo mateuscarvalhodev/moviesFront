@@ -2,6 +2,7 @@ export interface MovieDTO {
   id: string;
   title: string;
   originalTitle: string;
+  originalLanguage: string;
   subtitle?: string;
   overview?: string;
   runtimeMinutes?: number;
@@ -31,6 +32,7 @@ export type ContentRating =
 export type Status = "RELEASED" | "ANNOUNCED" | "CANCELED" | "IN_PRODUCTION";
 
 export interface CreateMoviePayload {
+  approbation?: number;
   title: string;
   originalTitle: string;
   subtitle?: string;
@@ -43,7 +45,7 @@ export interface CreateMoviePayload {
   revenue?: number;
   profit?: number;
   studioId: string;
-  trailerYouTubeId?: string;
+  trailerUrl?: string;
   genres?: string[];
 }
 

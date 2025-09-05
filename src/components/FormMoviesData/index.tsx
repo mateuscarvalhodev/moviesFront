@@ -13,6 +13,7 @@ import {
   SheetFooter,
   SheetClose,
 } from "@/components/ui/sheet";
+
 import {
   Form,
   FormField,
@@ -43,6 +44,8 @@ import {
   CommandInput,
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { Slider } from "../ui/slider";
 
 type Studio = { id: string; name: string };
 
@@ -78,7 +81,7 @@ const schema = z.object({
   runtimeMinutes: z.number().int().positive().optional(),
   genres: z.array(z.string()).default([]),
   posterFile: fileSchema.optional(),
-  trailerYouTubeId: z.string().optional(),
+  trailerUrl: z.string().optional(),
   overview: z.string().optional(),
   contentRating: ContentRatingEnum,
   status: StatusEnum,
@@ -86,6 +89,7 @@ const schema = z.object({
   revenue: z.number().nonnegative().optional(),
   profit: z.number().nonnegative().optional(),
   studioId: z.string().uuid("Selecione um estúdio válido"),
+  approbation: z.number().int().min(1).max(100),
 });
 
 type FormMoviesInput = z.input<typeof schema>;
@@ -120,11 +124,8 @@ function MultiSelect({
   const valuesSet = new Set(value);
 
   function toggle(val: string) {
-    if (valuesSet.has(val)) {
-      onChange(value.filter((v) => v !== val));
-    } else {
-      onChange([...value, val]);
-    }
+    if (valuesSet.has(val)) onChange(value.filter((v) => v !== val));
+    else onChange([...value, val]);
   }
 
   return (
@@ -256,7 +257,7 @@ export const FormMoviesData = ({
       runtimeMinutes: undefined,
       genres: [],
       posterFile: undefined,
-      trailerYouTubeId: "",
+      trailerUrl: "",
       overview: "",
       contentRating: "ALL_AGES",
       status: "RELEASED",
@@ -264,6 +265,7 @@ export const FormMoviesData = ({
       revenue: undefined,
       profit: undefined,
       studioId: "",
+      approbation: 50,
       ...defaultValues,
     } as Partial<FormMoviesInput>,
   });
@@ -271,14 +273,38 @@ export const FormMoviesData = ({
   const submitting = form.formState.isSubmitting;
 
   const handleSubmit: SubmitHandler<FormMoviesValues> = async (values) => {
-    try {
-      const created = await createMovie(values);
-      await onSubmit?.(values);
-      onOpenChange(false);
-      console.log("Filme adicionado:", created);
-    } catch (err) {
-      console.error("Falha ao criar filme:", err);
-    }
+    const payload = {
+      ...values,
+      releaseYear: values.year,
+      approbation: values.approbation,
+      budget: values.budget ?? undefined,
+      revenue: values.revenue ?? undefined,
+      profit: values.profit ?? undefined,
+    };
+    console.log(payload);
+
+    await createMovie(payload);
+    await onSubmit?.(values);
+    toast.success("Filme criado com sucesso!");
+    onOpenChange(false);
+
+    form.reset({
+      title: "",
+      originalTitle: "",
+      subtitle: "",
+      year: new Date().getFullYear(),
+      runtimeMinutes: undefined,
+      genres: [],
+      posterFile: undefined,
+      trailerUrl: "",
+      overview: "",
+      contentRating: "ALL_AGES",
+      status: "RELEASED",
+      budget: undefined,
+      revenue: undefined,
+      profit: undefined,
+      studioId: "",
+    });
   };
 
   function parseNumberOrUndefined(e: ChangeEvent<HTMLInputElement>) {
@@ -298,7 +324,7 @@ export const FormMoviesData = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-[420px] sm:w-[520px] bg-bg-elev text-fg"
+        className="w-[420px] sm:w-[520px] bg-bg-elev text-fg h-dvh overflow-y-auto"
       >
         <SheetHeader>
           <SheetTitle>Novo filme</SheetTitle>
@@ -327,6 +353,7 @@ export const FormMoviesData = ({
                           field.onChange(e)
                         }
                         onBlur={field.onBlur}
+                        disabled={submitting}
                       />
                     </FormControl>
                     <FormMessage />
@@ -351,6 +378,7 @@ export const FormMoviesData = ({
                             field.onChange(e)
                           }
                           onBlur={field.onBlur}
+                          disabled={submitting}
                         />
                       </FormControl>
                       <FormMessage />
@@ -374,6 +402,7 @@ export const FormMoviesData = ({
                           }
                           onBlur={field.onBlur}
                           placeholder="Opcional"
+                          disabled={submitting}
                         />
                       </FormControl>
                       <FormMessage />
@@ -400,6 +429,7 @@ export const FormMoviesData = ({
                             field.onChange(parseNumberOrUndefined(e))
                           }
                           onBlur={field.onBlur}
+                          disabled={submitting}
                         />
                       </FormControl>
                       <FormMessage />
@@ -424,6 +454,7 @@ export const FormMoviesData = ({
                           }
                           onBlur={field.onBlur}
                           placeholder="Opcional"
+                          disabled={submitting}
                         />
                       </FormControl>
                       <FormMessage />
@@ -512,6 +543,7 @@ export const FormMoviesData = ({
                           }
                           onBlur={field.onBlur}
                           placeholder="Opcional"
+                          disabled={submitting}
                         />
                       </FormControl>
                       <FormMessage />
@@ -536,6 +568,7 @@ export const FormMoviesData = ({
                           }
                           onBlur={field.onBlur}
                           placeholder="Opcional"
+                          disabled={submitting}
                         />
                       </FormControl>
                       <FormMessage />
@@ -543,8 +576,35 @@ export const FormMoviesData = ({
                   )}
                 />
               </div>
-
               <FormField
+                control={form.control}
+                name="approbation"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Popularidade (1 a 100)</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <Slider
+                            min={1}
+                            max={100}
+                            step={1}
+                            value={[field.value ?? 50]}
+                            onValueChange={(v) => field.onChange(v[0])}
+                            onValueCommit={(v) => field.onChange(v[0])}
+                            disabled={submitting}
+                          />
+                        </div>
+                        <span className="w-10 text-right tabular-nums">
+                          {field.value ?? 50}
+                        </span>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* <FormField
                 control={form.control}
                 name="profit"
                 render={({ field }) => (
@@ -562,12 +622,13 @@ export const FormMoviesData = ({
                         }
                         onBlur={field.onBlur}
                         placeholder="Opcional"
+                        disabled={submitting}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+              /> */}
 
               <FormField
                 control={form.control}
@@ -614,7 +675,7 @@ export const FormMoviesData = ({
                       <MultiSelect
                         options={genresList.map((g) => ({
                           label: g.name,
-                          value: g.name,
+                          value: g.id.toString(),
                         }))}
                         value={field.value ?? []}
                         onChange={handleMultiSelectChange}
@@ -649,6 +710,7 @@ export const FormMoviesData = ({
                           field.onChange(e.currentTarget.files?.[0])
                         }
                         onBlur={field.onBlur}
+                        disabled={submitting}
                       />
                     </FormControl>
                     <FormMessage />
@@ -658,7 +720,7 @@ export const FormMoviesData = ({
 
               <FormField
                 control={form.control}
-                name="trailerYouTubeId"
+                name="trailerUrl"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Trailer (YouTube ID ou URL)</FormLabel>
@@ -673,6 +735,7 @@ export const FormMoviesData = ({
                           field.onChange(e)
                         }
                         onBlur={field.onBlur}
+                        disabled={submitting}
                       />
                     </FormControl>
                     <FormMessage />
@@ -696,6 +759,7 @@ export const FormMoviesData = ({
                           field.onChange(e)
                         }
                         onBlur={field.onBlur}
+                        disabled={submitting}
                       />
                     </FormControl>
                     <FormMessage />

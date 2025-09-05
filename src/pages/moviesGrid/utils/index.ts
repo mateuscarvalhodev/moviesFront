@@ -1,12 +1,12 @@
-import type { MovieMock } from "@/service/movies";
 import type { FormMoviesValues } from "@/components/FormMoviesData";
+import type { MovieData } from "@/service/movies";
 
 export const PAGE_SIZE = 10;
 
 export function filterMovies(
-  all: MovieMock[] | null,
+  all: MovieData[] | null,
   query: string
-): MovieMock[] | null {
+): MovieData[] | null {
   if (!all) return null;
   const q = query.trim().toLowerCase();
   if (!q) return all;
@@ -54,13 +54,8 @@ export function generateId(): string {
   }
 }
 
-export function parseGenres(input?: string): string[] {
-  return (
-    input
-      ?.split(",")
-      .map((s) => s.trim())
-      .filter(Boolean) ?? []
-  );
+export function parseGenres(input?: string[]): string[] {
+  return input?.map((s) => s.trim()).filter(Boolean) ?? [];
 }
 
 function fileToObjectUrl(file?: File): string | undefined {
@@ -74,7 +69,7 @@ function fileToObjectUrl(file?: File): string | undefined {
 
 const PLACEHOLDER_POSTER = "https://via.placeholder.co/400x600?text=Poster";
 
-export function makeMovieFromForm(values: FormMoviesValues): MovieMock {
+export function makeMovieFromForm(values: FormMoviesValues): MovieData {
   const posterUrl = fileToObjectUrl(values.posterFile) ?? PLACEHOLDER_POSTER;
 
   return {

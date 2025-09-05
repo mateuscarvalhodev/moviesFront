@@ -8,6 +8,7 @@ import { Register } from "./pages/auth/Register/index.tsx";
 
 import MovieDetails from "./pages/moviesDetails/index.tsx";
 import MoviesGrid from "./pages/moviesGrid/index.tsx";
+import { Toaster } from "sonner";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -21,6 +22,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/movies/:id" element={<MovieDetails />} />
         </Routes>
       </Layout>
+      <Toaster />
     </BrowserRouter>
   </StrictMode>
 );

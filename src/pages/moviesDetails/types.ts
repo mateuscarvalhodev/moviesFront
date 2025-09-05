@@ -1,15 +1,18 @@
-import type { MovieMock } from "@/service/movies";
-
-export type MovieDetailsData = MovieMock & {
+export type MovieDetailsData = {
   originalTitle: string;
   tagline?: string;
   overview?: string;
   releaseDate?: string;
   runtimeMinutes?: number;
+  title: string;
   status?: string;
   originalLanguage?: string;
   budget?: number;
   revenue?: number;
   backdropUrl?: string;
-  trailerYouTubeId?: string;
+  trailerUrl?: string;
+  rating?: string;
+  posterUrl?: string;
+  genres: string[];
+  profit?: number;
 };

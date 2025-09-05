@@ -10,7 +10,8 @@ import {
 import { Metric } from "./components/Metrics";
 
 import type { MovieDetailsData } from "./types";
-import { getMovieId, type MovieDTO } from "@/service/moviesApi";
+import type { MovieDTO } from "@/service/moviesApi/types";
+import { getMovieId } from "@/service/moviesApi";
 
 function extractYouTubeId(input?: string | null): string | undefined {
   if (!input) return undefined;
@@ -32,6 +33,11 @@ function extractYouTubeId(input?: string | null): string | undefined {
   }
 }
 
+function toNumberOrUndefined(v: unknown): number | undefined {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 function adaptDTO(dto: MovieDTO): MovieDetailsData {
   return {
     title: dto.title,
@@ -41,13 +47,17 @@ function adaptDTO(dto: MovieDTO): MovieDetailsData {
     backdropUrl: dto.backdropUrl ?? undefined,
     genres: dto.genres?.map((g) => g.name) ?? [],
     rating: undefined,
-    releaseDate: dto.releaseDate ?? undefined,
+    releaseDate:
+      dto.releaseDate ??
+      (dto.releaseYear ? String(dto.releaseYear) : undefined),
     runtimeMinutes: dto.runtimeMinutes ?? undefined,
     status: dto.status ?? undefined,
-    originalLanguage: undefined,
-    budget: dto.budget ?? undefined,
-    revenue: dto.revenue ?? undefined,
-    trailerYouTubeId: extractYouTubeId(dto.trailerUrl),
+    originalLanguage: dto.originalLanguage ?? undefined,
+    budget: toNumberOrUndefined(dto.budget),
+    revenue: toNumberOrUndefined(dto.revenue),
+    profit: toNumberOrUndefined(dto.profit),
+    trailerUrl: extractYouTubeId(dto.trailerUrl),
+    originalTitle: dto.originalTitle,
   };
 }
 
@@ -63,7 +73,7 @@ export const MovieDetails = () => {
   }, [id]);
 
   const ratingPercent = useMemo(
-    () => normalizeRatingPercent(data?.rating),
+    () => normalizeRatingPercent(Number(data?.rating)),
     [data?.rating]
   );
 
@@ -72,6 +82,16 @@ export const MovieDetails = () => {
     const p = ratingPercent ?? 0;
     return getCircleProgress(RADIUS, p);
   }, [ratingPercent]);
+
+  const releaseDisplay = useMemo(() => {
+    const d = data?.releaseDate;
+    if (!d) return "-";
+    if (/^\d{4}-\d{2}-\d{2}/.test(d)) {
+      const [y, m, day] = d.split("-");
+      return `${day}/${m}/${y}`;
+    }
+    return d;
+  }, [data?.releaseDate]);
 
   if (!data) {
     return (
@@ -98,12 +118,12 @@ export const MovieDetails = () => {
           <h1 className="text-3xl font-bold text-white">{data.title}</h1>
           <div className="flex items-center gap-3">
             <AppButton
-              variant="subtle"
+              variant="danger"
               className="bg-mauve-6/40 border border-mauve-10/30 text-mauve-12 hover:bg-mauve-7/40"
             >
               Deletar
             </AppButton>
-            <AppButton asChild>
+            <AppButton variant="subtle" asChild>
               <Link to={`/movies/${id}/edit`}>Editar</Link>
             </AppButton>
           </div>
@@ -179,10 +199,7 @@ export const MovieDetails = () => {
 
             <div className="mt-8 grid gap-3">
               <div className="grid grid-cols-2 gap-3">
-                <Metric
-                  label="LANÇAMENTO"
-                  value={data.releaseDate?.split("-").reverse().join("/")}
-                />
+                <Metric label="LANÇAMENTO" value={releaseDisplay} />
                 <Metric
                   label="DURAÇÃO"
                   value={formatRuntime(data.runtimeMinutes)}
@@ -212,8 +229,8 @@ export const MovieDetails = () => {
             <iframe
               className="h-full w-full"
               src={
-                data.trailerYouTubeId
-                  ? `https://www.youtube.com/embed/${data.trailerYouTubeId}?rel=0`
+                data.trailerUrl
+                  ? `https://www.youtube.com/embed/${data.trailerUrl}?rel=0`
                   : undefined
               }
               title={`${data.title} Trailer`}

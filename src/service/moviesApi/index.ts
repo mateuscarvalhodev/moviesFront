@@ -21,8 +21,9 @@ function buildMoviePayload(values: FormMoviesValues): CreateMoviePayload {
     revenue: values.revenue ?? undefined,
     profit: values.profit ?? undefined,
     studioId: values.studioId,
-    trailerYouTubeId: values.trailerYouTubeId || undefined,
+    trailerUrl: values.trailerUrl || undefined,
     genres: values.genres && values.genres.length ? values.genres : undefined,
+    approbation: values.approbation || undefined,
   };
 }
 
@@ -52,11 +53,12 @@ function buildMovieFormData(
   appendIfDefined(fd, "budget", payload.budget);
   appendIfDefined(fd, "revenue", payload.revenue);
   appendIfDefined(fd, "profit", payload.profit);
-  appendIfDefined(fd, "trailerYouTubeId", payload.trailerYouTubeId);
+  appendIfDefined(fd, "trailerUrl", payload.trailerUrl);
+  appendIfDefined(fd, "approbation", payload.approbation);
 
   if (payload.genres && payload.genres.length) {
     for (const g of payload.genres) {
-      fd.append("genres", g);
+      fd.append("genres[]", g);
     }
   }
 

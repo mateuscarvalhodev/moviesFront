@@ -24,7 +24,6 @@ import {
   paginate,
   getPageCount,
   buildPageNumbers,
-  makeMovieFromForm,
 } from "./utils";
 import { getMovies } from "@/service/moviesApi";
 import type { MovieData } from "@/service/movies";
@@ -35,8 +34,13 @@ export default function MoviesPage() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
 
+  async function fetchList() {
+    const list = await getMovies({});
+    setAll(list as MovieData[]);
+  }
+
   useEffect(() => {
-    getMovies({}).then((list) => setAll(list as MovieData[]));
+    fetchList();
   }, []);
 
   const filtered = useMemo(() => filterMovies(all, query), [all, query]);
@@ -53,11 +57,16 @@ export default function MoviesPage() {
     [page, pageCount]
   );
 
-  function handleCreateMovie(values: FormMoviesValues) {
-    const newMovie = makeMovieFromForm(values);
-    setAll((prev) => [newMovie, ...(prev ?? [])]);
-    setOpenNew(false);
-    setPage(1);
+  async function handleCreateMovie(values: FormMoviesValues) {
+    void values;
+
+    try {
+      await fetchList();
+      setPage(1);
+      setOpenNew(false);
+    } catch (e) {
+      console.error("Falha ao atualizar a lista local após criação:", e);
+    }
   }
 
   return (
