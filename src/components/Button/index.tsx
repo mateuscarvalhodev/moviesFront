@@ -1,42 +1,60 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { cva, type VariantProps } from "class-variance-authority";
+import { twMerge } from "tailwind-merge";
 
 function cn(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
+  return twMerge(classes.filter(Boolean).join(" "));
 }
 
-const appButtonVariants = cva("select-none transition-colors", {
-  variants: {
-    variant: {
-      primary: cn(
-        "!text-white !bg-brand",
-        "hover:!bg-brand-cta",
-        "active:!bg-purple-11",
-        "disabled:!bg-mauve-8 disabled:!text-mauve-11"
-      ),
-      secondary: cn(
-        "!text-white bg-purple-3/30 border border-purple-10/30",
-        "hover:!bg-purple-4/40",
-        "active:!bg-purple-5/50",
-        "disabled:!bg-mauve-6/40 disabled:!text-mauve-11"
-      ),
+const appButtonVariants = cva(
+  [
+    "inline-flex items-center justify-center select-none",
+    "font-medium transition-colors",
+    "focus-visible:outline-none focus-visible:ring-2",
+    "focus-visible:ring-[--color-focus] ring-offset-0",
+    "disabled:opacity-60 disabled:cursor-not-allowed",
+  ].join(" "),
+  {
+    variants: {
+      variant: {
+        brand: cn(
+          "text-white bg-brand",
+          "hover:bg-brand-cta",
+          "active:bg-purple-11"
+        ),
+        surface: cn("text-fg bg-bg-elev border border-white/10", "hover:bg-bg"),
+        outline: cn(
+          "text-fg bg-transparent border border-white/15",
+          "hover:bg-white/5"
+        ),
+        subtle: cn(
+          "border border-purple-10/30",
+          // Light: fundo sólido claro + texto legível
+          "bg-purple-3 text-fg hover:bg-purple-4 active:bg-purple-5",
+          // Dark: translúcido como antes + texto branco
+          "dark:bg-purple-3/30 dark:text-white dark:hover:bg-purple-4/40 dark:active:bg-purple-5/50"
+        ),
+        ghost: cn("text-fg bg-transparent hover:bg-white/5"),
+        danger: cn("text-white bg-destructive hover:opacity-90"),
+      },
+      size: {
+        sm: "h-9 px-3 rounded-sm text-sm",
+        md: "h-10 px-4 rounded text-sm",
+        lg: "h-11 px-5 rounded text-base",
+      },
+      full: {
+        true: "w-full",
+        false: "",
+      },
     },
-    size: {
-      sm: "h-9 px-3 rounded-sm",
-      md: "h-10 px-4 rounded",
-      lg: "h-11 px-5 rounded",
+    defaultVariants: {
+      variant: "brand",
+      size: "md",
+      full: false,
     },
-    full: {
-      true: "w-full",
-      false: "",
-    },
-  },
-  defaultVariants: {
-    variant: "primary",
-    size: "md",
-  },
-});
+  }
+);
 
 export interface AppButtonProps
   extends Omit<

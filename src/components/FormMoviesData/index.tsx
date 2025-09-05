@@ -32,13 +32,30 @@ const fileSchema = z
   )
   .refine((f) => f.size <= 5 * 1024 * 1024, "Tamanho máximo 5MB");
 
+const StatusEnum = z.enum([
+  "RELEASED",
+  "ANNOUNCED",
+  "CANCELED",
+  "IN_PRODUCTION",
+]);
+const ContentRatingEnum = z.enum(["ALL_AGES", "PG", "PG_13", "R", "NC_17"]);
+
 const schema = z.object({
   title: z.string().min(1, "Informe o título"),
+  originalTitle: z.string().min(1, "Informe o título original"),
+  subtitle: z.string().optional(),
   year: z.coerce.number().int().min(1888).max(2100),
+  runtimeMinutes: z.coerce.number().int().positive().optional(),
   genres: z.string().optional(),
   posterFile: fileSchema.optional(),
   trailerYouTubeId: z.string().optional(),
   overview: z.string().optional(),
+  contentRating: ContentRatingEnum,
+  status: StatusEnum,
+  budget: z.coerce.number().nonnegative().optional(),
+  revenue: z.coerce.number().nonnegative().optional(),
+  profit: z.coerce.number().nonnegative().optional(),
+  studioName: z.string().min(1, "Informe o estúdio"),
 });
 
 type FormMoviesInput = z.input<typeof schema>;
@@ -62,11 +79,20 @@ export const FormMoviesData = ({
     mode: "onChange",
     defaultValues: {
       title: "",
+      originalTitle: "",
+      subtitle: "",
       year: new Date().getFullYear(),
+      runtimeMinutes: undefined,
       genres: "",
       posterFile: undefined,
       trailerYouTubeId: "",
       overview: "",
+      contentRating: "ALL_AGES",
+      status: "RELEASED",
+      budget: undefined,
+      revenue: undefined,
+      profit: undefined,
+      studioName: "",
       ...defaultValues,
     } as Partial<FormMoviesInput>,
   });
@@ -86,9 +112,7 @@ export const FormMoviesData = ({
       >
         <SheetHeader>
           <SheetTitle>Novo filme</SheetTitle>
-          <SheetDescription>
-            Preencha os dados para adicionar um filme.
-          </SheetDescription>
+          <SheetDescription>Adicione um filme.</SheetDescription>
         </SheetHeader>
 
         <div className="mt-4 p-4">
@@ -123,6 +147,54 @@ export const FormMoviesData = ({
               <div className="grid grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
+                  name="originalTitle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Título original</FormLabel>
+                      <FormControl>
+                        <Input
+                          className="bg-bg text-fg"
+                          name={field.name}
+                          ref={field.ref}
+                          value={field.value ?? ""}
+                          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            field.onChange(e)
+                          }
+                          onBlur={field.onBlur}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="subtitle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subtítulo</FormLabel>
+                      <FormControl>
+                        <Input
+                          className="bg-bg text-fg"
+                          name={field.name}
+                          ref={field.ref}
+                          value={field.value ?? ""}
+                          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            field.onChange(e)
+                          }
+                          onBlur={field.onBlur}
+                          placeholder="Opcional"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
                   name="year"
                   render={({ field }) => (
                     <FormItem>
@@ -146,21 +218,22 @@ export const FormMoviesData = ({
                 />
                 <FormField
                   control={form.control}
-                  name="genres"
+                  name="runtimeMinutes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Gêneros</FormLabel>
+                      <FormLabel>Duração (min)</FormLabel>
                       <FormControl>
                         <Input
+                          type="number"
                           className="bg-bg text-fg"
-                          placeholder="Ação, Aventura"
                           name={field.name}
                           ref={field.ref}
-                          value={field.value ?? ""}
+                          value={field.value == null ? "" : String(field.value)}
                           onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             field.onChange(e)
                           }
                           onBlur={field.onBlur}
+                          placeholder="Opcional"
                         />
                       </FormControl>
                       <FormMessage />
@@ -168,6 +241,163 @@ export const FormMoviesData = ({
                   )}
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="contentRating"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Classificação</FormLabel>
+                      <FormControl>
+                        <select
+                          className="h-10 w-full rounded-md border border-white/10 bg-bg px-3 text-fg"
+                          name={field.name}
+                          ref={field.ref}
+                          value={field.value ?? ""}
+                          onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                            field.onChange(e.target.value)
+                          }
+                          onBlur={field.onBlur}
+                        >
+                          <option value="ALL_AGES">Livre</option>
+                          <option value="PG">PG</option>
+                          <option value="PG_13">PG-13</option>
+                          <option value="R">R</option>
+                          <option value="NC_17">NC-17</option>
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <FormControl>
+                        <select
+                          className="h-10 w-full rounded-md border border-white/10 bg-bg px-3 text-fg"
+                          name={field.name}
+                          ref={field.ref}
+                          value={field.value ?? ""}
+                          onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                            field.onChange(e.target.value)
+                          }
+                          onBlur={field.onBlur}
+                        >
+                          <option value="RELEASED">Lançado</option>
+                          <option value="ANNOUNCED">Anunciado</option>
+                          <option value="CANCELED">Cancelado</option>
+                          <option value="IN_PRODUCTION">Em produção</option>
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="budget"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Orçamento (USD)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          className="bg-bg text-fg"
+                          name={field.name}
+                          ref={field.ref}
+                          value={field.value == null ? "" : String(field.value)}
+                          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            field.onChange(e)
+                          }
+                          onBlur={field.onBlur}
+                          placeholder="Opcional"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="revenue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Receita (USD)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          className="bg-bg text-fg"
+                          name={field.name}
+                          ref={field.ref}
+                          value={field.value == null ? "" : String(field.value)}
+                          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            field.onChange(e)
+                          }
+                          onBlur={field.onBlur}
+                          placeholder="Opcional"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="profit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lucro (USD)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        className="bg-bg text-fg"
+                        name={field.name}
+                        ref={field.ref}
+                        value={field.value == null ? "" : String(field.value)}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                          field.onChange(e)
+                        }
+                        onBlur={field.onBlur}
+                        placeholder="Opcional"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="studioName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estúdio</FormLabel>
+                    <FormControl>
+                      <Input
+                        className="bg-bg text-fg"
+                        name={field.name}
+                        ref={field.ref}
+                        value={field.value ?? ""}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                          field.onChange(e)
+                        }
+                        onBlur={field.onBlur}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
@@ -202,7 +432,7 @@ export const FormMoviesData = ({
                     <FormControl>
                       <Input
                         className="bg-bg text-fg"
-                        placeholder="lcwmDAYt22k"
+                        placeholder="Link do trailer"
                         name={field.name}
                         ref={field.ref}
                         value={field.value ?? ""}
@@ -242,7 +472,7 @@ export const FormMoviesData = ({
 
               <SheetFooter className="mt-6">
                 <SheetClose asChild>
-                  <AppButton variant="secondary" type="button">
+                  <AppButton variant="subtle" type="button">
                     Cancelar
                   </AppButton>
                 </SheetClose>
