@@ -46,3 +46,15 @@ export interface CreateMoviePayload {
   trailerYouTubeId?: string;
   genres?: string[];
 }
+
+export interface StudioDTO {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GenresDTO {
+  id: string;
+  name: string;
+}

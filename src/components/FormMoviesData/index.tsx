@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { ChangeEvent } from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
 
 import {
   Sheet,
@@ -23,7 +24,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AppButton } from "@/components/Button";
-import { createMovie } from "@/service/moviesApi";
+import {
+  createMovie,
+  getMoviesStudios,
+  getMoviesGenres,
+} from "@/service/moviesApi";
+import type { GenresDTO, StudioDTO } from "@/service/moviesApi/types";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandEmpty,
+  CommandInput,
+} from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
+
+type Studio = { id: string; name: string };
 
 const fileSchema = z
   .instanceof(File)
@@ -55,7 +76,7 @@ const schema = z.object({
   subtitle: z.string().optional(),
   year: z.number().int().min(1888).max(2100),
   runtimeMinutes: z.number().int().positive().optional(),
-  genres: z.string().optional(),
+  genres: z.array(z.string()).default([]),
   posterFile: fileSchema.optional(),
   trailerYouTubeId: z.string().optional(),
   overview: z.string().optional(),
@@ -64,7 +85,7 @@ const schema = z.object({
   budget: z.number().nonnegative().optional(),
   revenue: z.number().nonnegative().optional(),
   profit: z.number().nonnegative().optional(),
-  studioId: z.string().min(1, "Informe o ID do estúdio"),
+  studioId: z.string().uuid("Selecione um estúdio válido"),
 });
 
 type FormMoviesInput = z.input<typeof schema>;
@@ -77,12 +98,153 @@ interface FormMoviesDataProps {
   defaultValues?: Partial<FormMoviesInput>;
 }
 
+function cx(...cls: Array<string | false | null | undefined>) {
+  return cls.filter(Boolean).join(" ");
+}
+
+type MultiSelectOption = { label: string; value: string };
+function MultiSelect({
+  options,
+  value,
+  onChange,
+  placeholder,
+  disabled,
+}: {
+  options: MultiSelectOption[];
+  value: string[];
+  onChange: (v: string[]) => void;
+  placeholder?: string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const valuesSet = new Set(value);
+
+  function toggle(val: string) {
+    if (valuesSet.has(val)) {
+      onChange(value.filter((v) => v !== val));
+    } else {
+      onChange([...value, val]);
+    }
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          className={cx(
+            "flex w-full min-h-10 items-center justify-between rounded-md border border-white/10 bg-bg px-3 py-2 text-left text-fg",
+            disabled && "opacity-60 cursor-not-allowed"
+          )}
+        >
+          <div className="flex flex-wrap gap-1">
+            {value.length === 0 ? (
+              <span className="text-mauve-10">
+                {placeholder ?? "Selecione..."}
+              </span>
+            ) : (
+              value.map((v) => (
+                <Badge
+                  key={v}
+                  variant="secondary"
+                  className="bg-mauve-4 text-fg"
+                >
+                  {options.find((o) => o.value === v)?.label ?? v}
+                </Badge>
+              ))
+            )}
+          </div>
+          <ChevronsUpDown className="ml-2 h-4 w-4 opacity-60" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <Command>
+          <CommandInput placeholder="Buscar gênero..." />
+          <CommandEmpty>Nenhum gênero encontrado.</CommandEmpty>
+          <CommandGroup className="max-h-60 overflow-auto">
+            {options.map((opt) => {
+              const selected = valuesSet.has(opt.value);
+              return (
+                <CommandItem
+                  key={opt.value}
+                  onSelect={() => toggle(opt.value)}
+                  className="cursor-pointer"
+                >
+                  <Check
+                    className={cx(
+                      "mr-2 h-4 w-4",
+                      selected ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {opt.label}
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export const FormMoviesData = ({
   open,
   onOpenChange,
   onSubmit,
   defaultValues,
 }: FormMoviesDataProps) => {
+  const [studios, setStudios] = useState<Studio[]>([]);
+  const [genresList, setGenresList] = useState<GenresDTO[]>([]);
+  const [studiosLoading, setStudiosLoading] = useState(false);
+  const [studiosError, setStudiosError] = useState<string | undefined>();
+  const [genresLoading, setGenresLoading] = useState(false);
+  const [genresError, setGenresError] = useState<string | undefined>();
+
+  function normalizeList<T>(raw: unknown): T[] {
+    if (Array.isArray(raw)) return raw as T[];
+    if (raw && typeof raw === "object" && "items" in raw) {
+      const items = (raw as { items?: unknown }).items;
+      return Array.isArray(items) ? (items as T[]) : [];
+    }
+    return [];
+  }
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setStudiosLoading(true);
+      setStudiosError(undefined);
+      try {
+        const raw = (await getMoviesStudios()) as unknown;
+        const list = normalizeList<StudioDTO>(raw).map((s) => ({
+          id: s.id,
+          name: s.name,
+        }));
+        if (mounted) setStudios(list);
+      } catch {
+        if (mounted) setStudiosError("Falha ao carregar estúdios.");
+      } finally {
+        if (mounted) setStudiosLoading(false);
+      }
+
+      setGenresLoading(true);
+      setGenresError(undefined);
+      try {
+        const raw = (await getMoviesGenres()) as unknown;
+        const list = normalizeList<GenresDTO>(raw);
+        if (mounted) setGenresList(list);
+      } catch {
+        if (mounted) setGenresError("Falha ao carregar gêneros.");
+      } finally {
+        if (mounted) setGenresLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const form = useForm<FormMoviesInput, unknown, FormMoviesValues>({
     resolver: zodResolver(schema),
     mode: "onChange",
@@ -92,7 +254,7 @@ export const FormMoviesData = ({
       subtitle: "",
       year: new Date().getFullYear(),
       runtimeMinutes: undefined,
-      genres: "",
+      genres: [],
       posterFile: undefined,
       trailerYouTubeId: "",
       overview: "",
@@ -122,6 +284,14 @@ export const FormMoviesData = ({
   function parseNumberOrUndefined(e: ChangeEvent<HTMLInputElement>) {
     const v = e.currentTarget.value;
     return v === "" ? undefined : Number(v);
+  }
+
+  function handleMultiSelectChange(next: string[]) {
+    form.setValue("genres", next, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
   }
 
   return (
@@ -225,7 +395,7 @@ export const FormMoviesData = ({
                           className="bg-bg text-fg"
                           name={field.name}
                           ref={field.ref}
-                          value={field.value ?? 0}
+                          value={field.value ?? new Date().getFullYear()}
                           onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             field.onChange(parseNumberOrUndefined(e))
                           }
@@ -279,6 +449,7 @@ export const FormMoviesData = ({
                             field.onChange(e.target.value)
                           }
                           onBlur={field.onBlur}
+                          disabled={submitting}
                         >
                           <option value="ALL_AGES">Livre</option>
                           <option value="AGE_10">10+</option>
@@ -308,6 +479,7 @@ export const FormMoviesData = ({
                             field.onChange(e.target.value)
                           }
                           onBlur={field.onBlur}
+                          disabled={submitting}
                         >
                           <option value="RELEASED">Lançado</option>
                           <option value="ANNOUNCED">Anunciado</option>
@@ -402,18 +574,57 @@ export const FormMoviesData = ({
                 name="studioId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Estúdio (ID)</FormLabel>
+                    <FormLabel>Estúdio</FormLabel>
                     <FormControl>
-                      <Input
-                        className="bg-bg text-fg"
+                      <select
+                        className="h-10 w-full rounded-md border border-white/10 bg-bg px-3 text-fg"
                         name={field.name}
                         ref={field.ref}
                         value={field.value ?? ""}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                          field.onChange(e)
+                        onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                          field.onChange(e.target.value)
                         }
                         onBlur={field.onBlur}
-                        placeholder="ex: 123, uuid..."
+                        disabled={studiosLoading || submitting}
+                      >
+                        <option value="" disabled>
+                          {studiosLoading
+                            ? "Carregando estúdios..."
+                            : studiosError ?? "Selecione um estúdio"}
+                        </option>
+                        {studios.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="genres"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gêneros</FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        options={genresList.map((g) => ({
+                          label: g.name,
+                          value: g.name,
+                        }))}
+                        value={field.value ?? []}
+                        onChange={handleMultiSelectChange}
+                        placeholder={
+                          genresError ??
+                          (genresLoading
+                            ? "Carregando..."
+                            : "Selecione os gêneros")
+                        }
+                        disabled={genresLoading || submitting}
                       />
                     </FormControl>
                     <FormMessage />

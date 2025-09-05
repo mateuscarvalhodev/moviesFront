@@ -1,15 +1,11 @@
 import type { FormMoviesValues } from "@/components/FormMoviesData";
 import api from "..";
-import type { CreateMoviePayload, MovieDTO } from "./types";
-
-function splitGenres(input?: string): string[] | undefined {
-  const arr =
-    input
-      ?.split(",")
-      .map((s) => s.trim())
-      .filter(Boolean) ?? [];
-  return arr.length ? arr : undefined;
-}
+import type {
+  CreateMoviePayload,
+  GenresDTO,
+  MovieDTO,
+  StudioDTO,
+} from "./types";
 
 function buildMoviePayload(values: FormMoviesValues): CreateMoviePayload {
   return {
@@ -26,7 +22,7 @@ function buildMoviePayload(values: FormMoviesValues): CreateMoviePayload {
     profit: values.profit ?? undefined,
     studioId: values.studioId,
     trailerYouTubeId: values.trailerYouTubeId || undefined,
-    genres: splitGenres(values.genres),
+    genres: values.genres && values.genres.length ? values.genres : undefined,
   };
 }
 
@@ -94,4 +90,14 @@ export async function getMovies(params: Record<string, string>) {
 export async function getMovieId(id: string): Promise<MovieDTO> {
   const { data } = await api.get(`/movies/${id}`);
   return data;
+}
+
+export async function getMoviesStudios(): Promise<StudioDTO[]> {
+  const { data } = await api.get<StudioDTO[]>("/studios");
+  return data;
+}
+
+export async function getMoviesGenres(): Promise<GenresDTO[]> {
+  const { data } = await api.get("/genres");
+  return data.items;
 }
