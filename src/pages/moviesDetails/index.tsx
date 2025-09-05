@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router";
 import { AppButton } from "@/components/Button";
-import { fetchMockMovies } from "@/service/movies";
-import type { MovieDetailsData } from "./types";
-import { buildDetails } from "./mock";
 import {
   formatRuntime,
   moneyUSD,
@@ -12,16 +9,57 @@ import {
 } from "./utils";
 import { Metric } from "./components/Metrics";
 
+import type { MovieDetailsData } from "./types";
+import { getMovieId, type MovieDTO } from "@/service/moviesApi";
+
+function extractYouTubeId(input?: string | null): string | undefined {
+  if (!input) return undefined;
+  if (!input.includes("http")) {
+    if (/^[a-zA-Z0-9_-]{6,}$/.test(input)) return input;
+    return undefined;
+  }
+  try {
+    const url = new URL(input);
+    if (url.hostname.includes("youtu.be")) {
+      return url.pathname.slice(1) || undefined;
+    }
+    const v = url.searchParams.get("v");
+    if (v) return v;
+    const parts = url.pathname.split("/");
+    return parts.pop() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function adaptDTO(dto: MovieDTO): MovieDetailsData {
+  return {
+    title: dto.title,
+    tagline: dto.subtitle ?? dto.originalTitle ?? "",
+    overview: dto.overview ?? "",
+    posterUrl: dto.posterUrl ?? "",
+    backdropUrl: dto.backdropUrl ?? undefined,
+    genres: dto.genres?.map((g) => g.name) ?? [],
+    rating: undefined,
+    releaseDate: dto.releaseDate ?? undefined,
+    runtimeMinutes: dto.runtimeMinutes ?? undefined,
+    status: dto.status ?? undefined,
+    originalLanguage: undefined,
+    budget: dto.budget ?? undefined,
+    revenue: dto.revenue ?? undefined,
+    trailerYouTubeId: extractYouTubeId(dto.trailerUrl),
+  };
+}
+
 export const MovieDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<MovieDetailsData | null>(null);
 
   useEffect(() => {
-    fetchMockMovies().then((all) => {
-      const base = all.find((m) => String(m.id) === id);
-      if (!base) return setData(null);
-      setData(buildDetails(base));
-    });
+    if (!id) return;
+    getMovieId(id)
+      .then((dto) => setData(adaptDTO(dto)))
+      .catch(() => setData(null));
   }, [id]);
 
   const ratingPercent = useMemo(
@@ -60,7 +98,7 @@ export const MovieDetails = () => {
           <h1 className="text-3xl font-bold text-white">{data.title}</h1>
           <div className="flex items-center gap-3">
             <AppButton
-              variant="secondary"
+              variant="subtle"
               className="bg-mauve-6/40 border border-mauve-10/30 text-mauve-12 hover:bg-mauve-7/40"
             >
               Deletar
@@ -72,7 +110,6 @@ export const MovieDetails = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,260px)_1fr_minmax(0,320px)]">
-          {/* Poster */}
           <div className="rounded-xl border border-white/10 bg-black/90 p-2">
             <img
               src={data.posterUrl}
@@ -92,9 +129,9 @@ export const MovieDetails = () => {
             </div>
 
             <div className="mt-5">
-              <h3 className="text-sm text-mauve-11">Generos</h3>
+              <h3 className="text-sm text-mauve-11">Gêneros</h3>
               <div className="mt-2 flex flex-wrap gap-2">
-                {data.genres.map((g) => (
+                {data.genres.map((g: string) => (
                   <span
                     key={g}
                     className="rounded-md border border-purple-10/30 bg-purple-3/30 px-2.5 py-1 text-xs text-white"
@@ -108,9 +145,8 @@ export const MovieDetails = () => {
 
           <div className="relative">
             <div className="relative grid grid-cols-2 gap-3 pr-20">
-              <Metric label="POPULARIDADE" value="42,595" />
-              <Metric label="VOTOS" value="5704" />
-
+              <Metric label="POPULARIDADE" value="—" />
+              <Metric label="VOTOS" value="—" />
               {ratingPercent != null && (
                 <div className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 grid place-items-center drop-shadow">
                   <svg width="64" height="64" viewBox="0 0 44 44">
@@ -175,7 +211,11 @@ export const MovieDetails = () => {
           <div className="aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-black/30">
             <iframe
               className="h-full w-full"
-              src={`https://www.youtube.com/embed/${data.trailerYouTubeId}?rel=0`}
+              src={
+                data.trailerYouTubeId
+                  ? `https://www.youtube.com/embed/${data.trailerYouTubeId}?rel=0`
+                  : undefined
+              }
               title={`${data.title} Trailer`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen

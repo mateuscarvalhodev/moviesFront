@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AppButton } from "@/components/Button";
+import { createMovie } from "@/service/moviesApi";
 
 const fileSchema = z
   .instanceof(File)
@@ -100,8 +101,14 @@ export const FormMoviesData = ({
   const submitting = form.formState.isSubmitting;
 
   const handleSubmit: SubmitHandler<FormMoviesValues> = async (values) => {
-    await onSubmit?.(values);
-    onOpenChange(false);
+    try {
+      const created = await createMovie(values);
+      await onSubmit?.(values);
+      onOpenChange(false);
+      console.log("Filme adicionado:", created);
+    } catch (err) {
+      console.error("Falha ao criar filme:", err);
+    }
   };
 
   return (
@@ -261,10 +268,8 @@ export const FormMoviesData = ({
                           onBlur={field.onBlur}
                         >
                           <option value="ALL_AGES">Livre</option>
-                          <option value="PG">PG</option>
-                          <option value="PG_13">PG-13</option>
-                          <option value="R">R</option>
-                          <option value="NC_17">NC-17</option>
+                          <option value="PG_13">13+</option>
+                          <option value="NC_17">17+</option>
                         </select>
                       </FormControl>
                       <FormMessage />

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 
-import { fetchMockMovies, type MovieMock } from "@/service/movies";
 import { MovieCard } from "@/components/MovieCard";
 import { Input } from "@/components/ui/input";
 import { AppButton } from "@/components/Button";
@@ -27,15 +26,17 @@ import {
   buildPageNumbers,
   makeMovieFromForm,
 } from "./utils";
+import { getMovies } from "@/service/moviesApi";
+import type { MovieData } from "@/service/movies";
 
 export default function MoviesPage() {
-  const [all, setAll] = useState<MovieMock[] | null>(null);
+  const [all, setAll] = useState<MovieData[] | null>(null);
   const [openNew, setOpenNew] = useState(false);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    fetchMockMovies().then(setAll);
+    getMovies({}).then((list) => setAll(list as MovieData[]));
   }, []);
 
   const filtered = useMemo(() => filterMovies(all, query), [all, query]);
@@ -44,7 +45,7 @@ export default function MoviesPage() {
     [filtered]
   );
   const items = useMemo(
-    () => paginate<MovieMock>(filtered, page, PAGE_SIZE),
+    () => paginate<MovieData>(filtered, page, PAGE_SIZE),
     [filtered, page]
   );
   const numbers = useMemo(
@@ -74,7 +75,7 @@ export default function MoviesPage() {
           />
           <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-mauve-10" />
         </div>
-        <AppButton variant="secondary">Filtros</AppButton>
+        <AppButton variant="subtle">Filtros</AppButton>
         <AppButton onClick={() => setOpenNew(true)}>Adicionar Filme</AppButton>
       </div>
 

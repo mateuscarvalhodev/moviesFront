@@ -30,9 +30,8 @@ const appButtonVariants = cva(
         ),
         subtle: cn(
           "border border-purple-10/30",
-          // Light: fundo sólido claro + texto legível
+
           "bg-purple-3 text-fg hover:bg-purple-4 active:bg-purple-5",
-          // Dark: translúcido como antes + texto branco
           "dark:bg-purple-3/30 dark:text-white dark:hover:bg-purple-4/40 dark:active:bg-purple-5/50"
         ),
         ghost: cn("text-fg bg-transparent hover:bg-white/5"),
