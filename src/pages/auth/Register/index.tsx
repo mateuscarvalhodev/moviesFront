@@ -1,5 +1,6 @@
-import * as React from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate, Link } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import {
@@ -18,7 +19,8 @@ import {
   type RegisterValues,
   type RegisterProps,
 } from "./types";
-import { Link } from "react-router";
+import { registerUser } from "@/service/authApi";
+import type { RegisterPayload } from "@/service/authApi/types";
 
 export const Register: React.FC<RegisterProps> = ({
   onSubmit,
@@ -26,6 +28,10 @@ export const Register: React.FC<RegisterProps> = ({
   defaultValues,
   error,
 }) => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>(undefined);
+
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     mode: "onChange",
@@ -38,10 +44,34 @@ export const Register: React.FC<RegisterProps> = ({
   });
 
   const submitting = form.formState.isSubmitting;
-  const canSubmit = form.formState.isValid && !isLoading && !submitting;
+  const effectiveLoading = isLoading || loading;
+  const canSubmit = form.formState.isValid && !effectiveLoading && !submitting;
 
   async function handleSubmit(values: RegisterValues) {
-    await onSubmit?.(values);
+    if (onSubmit) {
+      await onSubmit(values);
+      return;
+    }
+    setErrorMsg(undefined);
+    setLoading(true);
+    try {
+      const payload: RegisterPayload = {
+        name: values.name,
+        email: values.email,
+        password: values.password,
+      };
+      await registerUser(payload);
+      navigate("/auth/login");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ??
+        (err as Error)?.message ??
+        "Erro ao cadastrar.";
+      setErrorMsg(msg);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -147,14 +177,16 @@ export const Register: React.FC<RegisterProps> = ({
                 disabled={!canSubmit}
                 className="min-w-36"
               >
-                {isLoading || submitting ? "Cadastrando..." : "Cadastrar"}
+                {effectiveLoading || submitting
+                  ? "Cadastrando..."
+                  : "Cadastrar"}
               </AppButton>
             </div>
           </div>
 
-          {error ? (
-            <p className="text-sm text-red-400/90 mt-1">{error}</p>
-          ) : null}
+          {(errorMsg || error) && (
+            <p className="text-sm text-red-400/90 mt-1">{errorMsg ?? error}</p>
+          )}
         </form>
       </Form>
     </div>
