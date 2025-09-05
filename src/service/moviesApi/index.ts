@@ -1,48 +1,6 @@
 import type { FormMoviesValues } from "@/components/FormMoviesData";
 import api from "..";
-
-export type Status = "RELEASED" | "ANNOUNCED" | "CANCELED" | "IN_PRODUCTION";
-export type ContentRating = "ALL_AGES" | "PG" | "PG_13" | "R" | "NC_17";
-
-export interface CreateMoviePayload {
-  title: string;
-  originalTitle: string;
-  subtitle?: string;
-  overview?: string;
-  runtimeMinutes?: number;
-  releaseYear: number;
-  contentRating: ContentRating;
-  status: Status;
-  budget?: number;
-  revenue?: number;
-  profit?: number;
-  studioId: string;
-  trailerYouTubeId?: string;
-  genres?: string[];
-}
-
-export interface MovieDTO {
-  id: string;
-  title: string;
-  originalTitle: string;
-  subtitle?: string;
-  overview?: string;
-  runtimeMinutes?: number;
-  releaseYear: number;
-  releaseDate?: string | null;
-  contentRating: ContentRating;
-  status: Status;
-  budget?: number | null;
-  revenue?: number | null;
-  profit?: number | null;
-  studio?: { id: string; name: string } | null;
-  posterUrl?: string | null;
-  backdropUrl?: string | null;
-  trailerUrl?: string | null;
-  genres?: Array<{ id?: number | string; name: string }>;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import type { CreateMoviePayload, MovieDTO } from "./types";
 
 function splitGenres(input?: string): string[] | undefined {
   const arr =
@@ -59,17 +17,22 @@ function buildMoviePayload(values: FormMoviesValues): CreateMoviePayload {
     originalTitle: values.originalTitle,
     subtitle: values.subtitle || undefined,
     overview: values.overview || undefined,
-    runtimeMinutes: values.runtimeMinutes || undefined,
+    runtimeMinutes: values.runtimeMinutes ?? undefined,
     releaseYear: values.year,
     contentRating: values.contentRating,
     status: values.status,
     budget: values.budget ?? undefined,
     revenue: values.revenue ?? undefined,
     profit: values.profit ?? undefined,
-    studioId: values.studioName,
+    studioId: values.studioId,
     trailerYouTubeId: values.trailerYouTubeId || undefined,
     genres: splitGenres(values.genres),
   };
+}
+
+function appendIfDefined(fd: FormData, key: string, v: unknown) {
+  if (v === undefined || v === null) return;
+  fd.append(key, typeof v === "number" ? String(v) : (v as string));
 }
 
 function buildMovieFormData(
@@ -77,10 +40,34 @@ function buildMovieFormData(
   poster?: File
 ): FormData {
   const fd = new FormData();
-  fd.append("data", JSON.stringify(payload));
+
+  // obrigatórios
+  fd.append("title", payload.title);
+  fd.append("originalTitle", payload.originalTitle);
+  fd.append("releaseYear", String(payload.releaseYear));
+  fd.append("contentRating", payload.contentRating);
+  fd.append("status", payload.status);
+  fd.append("studioId", payload.studioId);
+
+  // Opcionais
+  appendIfDefined(fd, "subtitle", payload.subtitle);
+  appendIfDefined(fd, "overview", payload.overview);
+  appendIfDefined(fd, "runtimeMinutes", payload.runtimeMinutes);
+  appendIfDefined(fd, "budget", payload.budget);
+  appendIfDefined(fd, "revenue", payload.revenue);
+  appendIfDefined(fd, "profit", payload.profit);
+  appendIfDefined(fd, "trailerYouTubeId", payload.trailerYouTubeId);
+
+  if (payload.genres && payload.genres.length) {
+    for (const g of payload.genres) {
+      fd.append("genres", g);
+    }
+  }
+
   if (poster) {
     fd.append("poster", poster, poster.name);
   }
+
   return fd;
 }
 
@@ -98,15 +85,13 @@ export async function createMovie(values: FormMoviesValues): Promise<MovieDTO> {
   });
   return data;
 }
+
 export async function getMovies(params: Record<string, string>) {
-  const { data } = await api.get("/movies", {
-    params,
-  });
-  console.log({ data });
+  const { data } = await api.get("/movies", { params });
   return data.items;
 }
+
 export async function getMovieId(id: string): Promise<MovieDTO> {
   const { data } = await api.get(`/movies/${id}`);
-
   return data;
 }

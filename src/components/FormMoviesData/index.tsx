@@ -39,24 +39,32 @@ const StatusEnum = z.enum([
   "CANCELED",
   "IN_PRODUCTION",
 ]);
-const ContentRatingEnum = z.enum(["ALL_AGES", "PG", "PG_13", "R", "NC_17"]);
+
+const ContentRatingEnum = z.enum([
+  "ALL_AGES",
+  "AGE_10",
+  "AGE_12",
+  "AGE_14",
+  "AGE_16",
+  "AGE_18",
+]);
 
 const schema = z.object({
   title: z.string().min(1, "Informe o título"),
   originalTitle: z.string().min(1, "Informe o título original"),
   subtitle: z.string().optional(),
-  year: z.coerce.number().int().min(1888).max(2100),
-  runtimeMinutes: z.coerce.number().int().positive().optional(),
+  year: z.number().int().min(1888).max(2100),
+  runtimeMinutes: z.number().int().positive().optional(),
   genres: z.string().optional(),
   posterFile: fileSchema.optional(),
   trailerYouTubeId: z.string().optional(),
   overview: z.string().optional(),
   contentRating: ContentRatingEnum,
   status: StatusEnum,
-  budget: z.coerce.number().nonnegative().optional(),
-  revenue: z.coerce.number().nonnegative().optional(),
-  profit: z.coerce.number().nonnegative().optional(),
-  studioName: z.string().min(1, "Informe o estúdio"),
+  budget: z.number().nonnegative().optional(),
+  revenue: z.number().nonnegative().optional(),
+  profit: z.number().nonnegative().optional(),
+  studioId: z.string().min(1, "Informe o ID do estúdio"),
 });
 
 type FormMoviesInput = z.input<typeof schema>;
@@ -93,7 +101,7 @@ export const FormMoviesData = ({
       budget: undefined,
       revenue: undefined,
       profit: undefined,
-      studioName: "",
+      studioId: "",
       ...defaultValues,
     } as Partial<FormMoviesInput>,
   });
@@ -110,6 +118,11 @@ export const FormMoviesData = ({
       console.error("Falha ao criar filme:", err);
     }
   };
+
+  function parseNumberOrUndefined(e: ChangeEvent<HTMLInputElement>) {
+    const v = e.currentTarget.value;
+    return v === "" ? undefined : Number(v);
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -212,9 +225,9 @@ export const FormMoviesData = ({
                           className="bg-bg text-fg"
                           name={field.name}
                           ref={field.ref}
-                          value={field.value == null ? "" : String(field.value)}
+                          value={field.value ?? 0}
                           onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            field.onChange(e)
+                            field.onChange(parseNumberOrUndefined(e))
                           }
                           onBlur={field.onBlur}
                         />
@@ -235,9 +248,9 @@ export const FormMoviesData = ({
                           className="bg-bg text-fg"
                           name={field.name}
                           ref={field.ref}
-                          value={field.value == null ? "" : String(field.value)}
+                          value={field.value ?? ""}
                           onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            field.onChange(e)
+                            field.onChange(parseNumberOrUndefined(e))
                           }
                           onBlur={field.onBlur}
                           placeholder="Opcional"
@@ -268,8 +281,11 @@ export const FormMoviesData = ({
                           onBlur={field.onBlur}
                         >
                           <option value="ALL_AGES">Livre</option>
-                          <option value="PG_13">13+</option>
-                          <option value="NC_17">17+</option>
+                          <option value="AGE_10">10+</option>
+                          <option value="AGE_12">12+</option>
+                          <option value="AGE_14">14+</option>
+                          <option value="AGE_16">16+</option>
+                          <option value="AGE_18">18+</option>
                         </select>
                       </FormControl>
                       <FormMessage />
@@ -318,9 +334,9 @@ export const FormMoviesData = ({
                           className="bg-bg text-fg"
                           name={field.name}
                           ref={field.ref}
-                          value={field.value == null ? "" : String(field.value)}
+                          value={field.value ?? ""}
                           onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            field.onChange(e)
+                            field.onChange(parseNumberOrUndefined(e))
                           }
                           onBlur={field.onBlur}
                           placeholder="Opcional"
@@ -342,9 +358,9 @@ export const FormMoviesData = ({
                           className="bg-bg text-fg"
                           name={field.name}
                           ref={field.ref}
-                          value={field.value == null ? "" : String(field.value)}
+                          value={field.value ?? ""}
                           onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            field.onChange(e)
+                            field.onChange(parseNumberOrUndefined(e))
                           }
                           onBlur={field.onBlur}
                           placeholder="Opcional"
@@ -368,9 +384,9 @@ export const FormMoviesData = ({
                         className="bg-bg text-fg"
                         name={field.name}
                         ref={field.ref}
-                        value={field.value == null ? "" : String(field.value)}
+                        value={field.value ?? ""}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                          field.onChange(e)
+                          field.onChange(parseNumberOrUndefined(e))
                         }
                         onBlur={field.onBlur}
                         placeholder="Opcional"
@@ -383,10 +399,10 @@ export const FormMoviesData = ({
 
               <FormField
                 control={form.control}
-                name="studioName"
+                name="studioId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Estúdio</FormLabel>
+                    <FormLabel>Estúdio (ID)</FormLabel>
                     <FormControl>
                       <Input
                         className="bg-bg text-fg"
@@ -397,6 +413,7 @@ export const FormMoviesData = ({
                           field.onChange(e)
                         }
                         onBlur={field.onBlur}
+                        placeholder="ex: 123, uuid..."
                       />
                     </FormControl>
                     <FormMessage />
@@ -433,11 +450,11 @@ export const FormMoviesData = ({
                 name="trailerYouTubeId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Trailer (YouTube ID)</FormLabel>
+                    <FormLabel>Trailer (YouTube ID ou URL)</FormLabel>
                     <FormControl>
                       <Input
                         className="bg-bg text-fg"
-                        placeholder="Link do trailer"
+                        placeholder="lcwmDAYt22k ou URL"
                         name={field.name}
                         ref={field.ref}
                         value={field.value ?? ""}
