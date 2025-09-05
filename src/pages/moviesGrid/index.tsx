@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { Link } from "react-router";
+
 import { fetchMockMovies, type MovieMock } from "@/service/movies";
 import { MovieCard } from "@/components/MovieCard";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,23 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  FormMoviesData,
+  type FormMoviesValues,
+} from "@/components/FormMoviesData";
 
-const PAGE_SIZE = 10;
+import {
+  PAGE_SIZE,
+  filterMovies,
+  paginate,
+  getPageCount,
+  buildPageNumbers,
+  makeMovieFromForm,
+} from "./utils";
 
 export default function MoviesPage() {
   const [all, setAll] = useState<MovieMock[] | null>(null);
+  const [openNew, setOpenNew] = useState(false);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
 
@@ -26,39 +38,26 @@ export default function MoviesPage() {
     fetchMockMovies().then(setAll);
   }, []);
 
-  const filtered: MovieMock[] | null = useMemo(() => {
-    if (!all) return null;
-    const q = query.trim().toLowerCase();
-    if (!q) return all;
-    return all.filter(
-      (m) =>
-        m.title.toLowerCase().includes(q) ||
-        m.genres?.some((g) => g.toLowerCase().includes(q)) ||
-        String(m.year).includes(q)
-    );
-  }, [all, query]);
+  const filtered = useMemo(() => filterMovies(all, query), [all, query]);
+  const pageCount = useMemo(
+    () => getPageCount(filtered?.length ?? 0, PAGE_SIZE),
+    [filtered]
+  );
+  const items = useMemo(
+    () => paginate<MovieMock>(filtered, page, PAGE_SIZE),
+    [filtered, page]
+  );
+  const numbers = useMemo(
+    () => buildPageNumbers(page, pageCount),
+    [page, pageCount]
+  );
 
-  const pageCount: number = filtered
-    ? Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-    : 1;
-
-  const items: MovieMock[] =
-    filtered?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) ?? [];
-
-  const numbers: number[] = useMemo(() => {
-    const out: number[] = [];
-    const max = pageCount;
-    const push = (n: number) =>
-      n >= 1 && n <= max && !out.includes(n) && out.push(n);
-    push(1);
-    push(page - 1);
-    push(page);
-    push(page + 1);
-    push(max);
-    return out.sort((a, b) => a - b);
-  }, [page, pageCount]);
-
-  const skeletonCount = PAGE_SIZE;
+  function handleCreateMovie(values: FormMoviesValues) {
+    const newMovie = makeMovieFromForm(values);
+    setAll((prev) => [newMovie, ...(prev ?? [])]);
+    setOpenNew(false);
+    setPage(1);
+  }
 
   return (
     <div className="mx-auto w-full max-w-[1200px] px-4 py-4 space-y-6">
@@ -76,14 +75,12 @@ export default function MoviesPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-mauve-10" />
         </div>
         <AppButton variant="secondary">Filtros</AppButton>
-        <AppButton asChild>
-          <Link to="/movies/new">Adicionar Filme</Link>
-        </AppButton>
+        <AppButton onClick={() => setOpenNew(true)}>Adicionar Filme</AppButton>
       </div>
 
       {!all ? (
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {Array.from({ length: skeletonCount }).map((_, i) => (
+          {Array.from({ length: PAGE_SIZE }).map((_, i) => (
             <div
               key={i}
               className="aspect-[2/3] rounded-xl bg-mauve-4/60 animate-pulse"
@@ -155,6 +152,12 @@ export default function MoviesPage() {
           </PaginationItem>
         </PaginationContent>
       </Pagination>
+
+      <FormMoviesData
+        open={openNew}
+        onOpenChange={setOpenNew}
+        onSubmit={handleCreateMovie}
+      />
     </div>
   );
 }

@@ -81,7 +81,6 @@ export const MovieDetails = () => {
             />
           </div>
 
-          {/* Centro: tagline + sinopse + gêneros */}
           <div className="rounded-xl border border-white/10 bg-black/90 p-4">
             <p className="text-mauve-10">{data.tagline}</p>
 
@@ -107,9 +106,7 @@ export const MovieDetails = () => {
             </div>
           </div>
 
-          {/* Direita: métricas */}
           <div className="relative">
-            {/* Faixa superior: Popularidade | Votos + círculo solto */}
             <div className="relative grid grid-cols-2 gap-3 pr-20">
               <Metric label="POPULARIDADE" value="42,595" />
               <Metric label="VOTOS" value="5704" />
@@ -144,7 +141,6 @@ export const MovieDetails = () => {
               )}
             </div>
 
-            {/* Blocos alinhados ao topo da sinopse */}
             <div className="mt-8 grid gap-3">
               <div className="grid grid-cols-2 gap-3">
                 <Metric
@@ -174,7 +170,6 @@ export const MovieDetails = () => {
           </div>
         </div>
 
-        {/* Trailer */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-white">Trailer</h2>
           <div className="aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-black/30">
