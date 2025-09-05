@@ -11,3 +11,14 @@ export interface UserDTO {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  user: UserDTO;
+  accessToken: string;
+  refreshToken?: string;
+}

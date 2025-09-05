@@ -1,14 +1,11 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  identifier: z
+  email: z
     .string()
-    .min(1, "Informe seu nome ou e-mail")
+    .min(1, "Informe seu e-mail")
     .max(120, "Muito longo")
-    .refine(
-      (v) => !v.includes("@") || z.string().email().safeParse(v).success,
-      "E-mail inválido"
-    ),
+    .email("E-mail inválido"),
   password: z.string().min(6, "A senha precisa ter pelo menos 6 caracteres"),
 });
 

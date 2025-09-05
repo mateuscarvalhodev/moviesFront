@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import {
   Form,
   FormField,
@@ -11,7 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { AppButton } from "@/components/Button";
 import { loginSchema, type LoginValues, type LoginProps } from "./types";
-import { Link } from "react-router";
+import { loginUser } from "@/service/authApi";
+import type { LoginPayload, AuthResponse } from "@/service/authApi/types";
 
 export const Login = ({
   onSubmit,
@@ -20,20 +24,63 @@ export const Login = ({
   defaultValues,
   error,
 }: LoginProps) => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>(undefined);
+
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     mode: "onChange",
     defaultValues: {
-      identifier: defaultValues?.identifier ?? "",
+      email: defaultValues?.email ?? "",
       password: defaultValues?.password ?? "",
     },
   });
 
   const submitting = form.formState.isSubmitting;
-  const canSubmit = form.formState.isValid && !isLoading && !submitting;
+  const effectiveLoading = isLoading || loading;
+  const canSubmit = form.formState.isValid && !effectiveLoading && !submitting;
 
   async function handleSubmit(values: LoginValues) {
-    await onSubmit?.({ ...values, identifier: values.identifier.trim() });
+    const trimmed: LoginValues = {
+      ...values,
+      email: values.email.trim(),
+    };
+
+    if (onSubmit) {
+      await onSubmit(trimmed);
+      return;
+    }
+
+    setErrorMsg(undefined);
+    setLoading(true);
+    try {
+      const payload: LoginPayload = {
+        email: trimmed.email,
+        password: trimmed.password,
+      };
+      const data: AuthResponse = await loginUser(payload);
+
+      try {
+        sessionStorage.setItem("accessToken", data.accessToken);
+        if (data.refreshToken)
+          sessionStorage.setItem("refreshToken", data.refreshToken);
+        sessionStorage.setItem("user", JSON.stringify(data.user));
+      } catch {
+        setErrorMsg("Não foi possível salvar a sessão do usuário.");
+      }
+
+      navigate("/movies");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ??
+        (err as Error)?.message ??
+        "Erro ao entrar.";
+      setErrorMsg(msg);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -42,15 +89,15 @@ export const Login = ({
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="identifier"
+            name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-mauve-11">Nome/E-mail</FormLabel>
+                <FormLabel className="text-mauve-11">E-mail</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
-                    autoComplete="username"
-                    placeholder="Digite seu nome/E-mail"
+                    autoComplete="email"
+                    placeholder="Digite seu e-mail"
                     className="bg-bg text-fg h-12 text-base"
                   />
                 </FormControl>
@@ -97,13 +144,13 @@ export const Login = ({
             )}
 
             <AppButton type="submit" disabled={!canSubmit} className="min-w-32">
-              {isLoading || submitting ? "Entrando..." : "Entrar"}
+              {effectiveLoading || submitting ? "Entrando..." : "Entrar"}
             </AppButton>
           </div>
 
-          {error ? (
-            <p className="text-sm text-red-400/90 mt-1">{error}</p>
-          ) : null}
+          {(errorMsg || error) && (
+            <p className="text-sm text-red-400/90 mt-1">{errorMsg ?? error}</p>
+          )}
 
           <p className="mt-6 text-center text-sm">
             <span className="text-muted">Ainda não possui conta? </span>
