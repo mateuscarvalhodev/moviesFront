@@ -16,7 +16,7 @@ export type MovieDetailsData = {
   originalTitle: string;
   tagline?: string;
   overview?: string;
-  releaseDate?: string;
+  releaseDate?: Date;
   runtimeMinutes?: number;
   title: string;
   status?: StatusEnumType;
@@ -35,4 +35,6 @@ export type MovieDetailsData = {
   releaseYear?: number;
   approbation?: number;
   rawGenres: { id: string; name: string }[];
+  popularity?: number;
+  voteCount?: number;
 };

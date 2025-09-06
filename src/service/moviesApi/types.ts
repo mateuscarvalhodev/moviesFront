@@ -22,6 +22,8 @@ export interface MovieDTO {
   updatedAt?: string;
   studioId: string;
   approbation?: number;
+  popularity?: string;
+  voteCount?: number;
 }
 export type ContentRating =
   | "ALL_AGES"
@@ -41,6 +43,7 @@ export interface CreateMoviePayload {
   overview?: string;
   runtimeMinutes?: number;
   releaseYear: number;
+  releaseDate?: Date;
   contentRating: ContentRating;
   status: Status;
   budget?: number;
@@ -49,6 +52,8 @@ export interface CreateMoviePayload {
   studioId: string;
   trailerUrl?: string;
   genres?: string[];
+  popularity?: number;
+  voteCount?: number;
 }
 
 export interface StudioDTO {

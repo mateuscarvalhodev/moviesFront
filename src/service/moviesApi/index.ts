@@ -16,6 +16,7 @@ function buildMoviePayload(values: PayloadMovies): CreateMoviePayload {
     overview: values.overview || undefined,
     runtimeMinutes: values.runtimeMinutes ?? undefined,
     releaseYear: values.releaseYear,
+    releaseDate: values.releaseDate,
     contentRating: values.contentRating,
     status: values.status,
     budget: values.budget ?? undefined,
@@ -25,6 +26,8 @@ function buildMoviePayload(values: PayloadMovies): CreateMoviePayload {
     trailerUrl: values.trailerUrl || undefined,
     genres: values.genres && values.genres.length ? values.genres : undefined,
     approbation: values.approbation || undefined,
+    popularity: values.popularity,
+    voteCount: values.voteCount,
   };
 }
 

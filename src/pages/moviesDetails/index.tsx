@@ -60,9 +60,7 @@ function adaptDTO(dto: MovieDTO): MovieDetailsData {
     backdropUrl: dto.backdropUrl ?? undefined,
     genres: dto.genres?.map((g) => g.id) ?? [],
     rating: undefined,
-    releaseDate:
-      dto.releaseDate ??
-      (dto.releaseYear ? String(dto.releaseYear) : undefined),
+    releaseDate: dto.releaseDate ? new Date(dto.releaseDate) : undefined,
     runtimeMinutes: dto.runtimeMinutes ?? undefined,
     status: dto.status ?? undefined,
     originalLanguage: dto.originalLanguage ?? undefined,
@@ -76,6 +74,8 @@ function adaptDTO(dto: MovieDTO): MovieDetailsData {
     contentRating: dto.contentRating,
     approbation: dto.approbation ?? 50,
     rawGenres: dto.genres ?? [],
+    popularity: dto.popularity ? Number(dto.popularity) : 0,
+    voteCount: dto.voteCount ?? 0,
   };
 }
 
@@ -107,11 +107,8 @@ export const MovieDetails = () => {
   const releaseDisplay = useMemo(() => {
     const d = data?.releaseDate;
     if (!d) return "-";
-    if (/^\d{4}-\d{2}-\d{2}/.test(d)) {
-      const [y, m, day] = d.split("-");
-      return `${day}/${m}/${y}`;
-    }
-    return d;
+    const formated = new Date(d).toLocaleDateString();
+    return formated;
   }, [data?.releaseDate]);
 
   const handleConfirmDelete = async (): Promise<void> => {
@@ -247,8 +244,8 @@ export const MovieDetails = () => {
 
           <div className="relative">
             <div className="relative grid grid-cols-2 gap-3 pr-20">
-              <Metric label="POPULARIDADE" value="—" />
-              <Metric label="VOTOS" value="—" />
+              <Metric label="POPULARIDADE" value={data.popularity ?? "-"} />
+              <Metric label="VOTOS" value={data.voteCount ?? "-"} />
               {data.approbation != null && (
                 <div className="absolute right-0 top-1/2 -translate-y-1/2">
                   <ScoreCard percent={data.approbation} />

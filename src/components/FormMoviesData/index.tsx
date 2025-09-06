@@ -2,7 +2,7 @@ import { z } from "zod";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react";
 
 import {
   Sheet,
@@ -42,6 +42,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "../ui/slider";
 import { formatUSD, strCurrencyToNumber } from "./utils";
+import { Calendar } from "../ui/calendar";
+import { format } from "date-fns";
 
 type Studio = { id: string; name: string };
 
@@ -79,6 +81,7 @@ const schema = z.object({
   posterFile: fileSchema.optional(),
   trailerUrl: z.string().optional(),
   overview: z.string().optional(),
+  releaseDate: z.date().optional(),
   contentRating: ContentRatingEnum,
   status: StatusEnum,
   budget: z.string().optional(),
@@ -86,6 +89,8 @@ const schema = z.object({
   profit: z.string().optional(),
   studioId: z.string().uuid("Selecione um estúdio válido"),
   approbation: z.number().int().min(1).max(100),
+  popularity: z.number().int().optional(),
+  voteCount: z.number().int().optional(),
 });
 
 type FormMoviesInput = z.input<typeof schema>;
@@ -263,9 +268,14 @@ export const FormMoviesData = ({
   const submitting = form.formState.isSubmitting;
 
   const handleSubmit: SubmitHandler<FormMoviesValues> = async (values) => {
+    const year =
+      values.releaseDate instanceof Date
+        ? values.releaseDate.getFullYear()
+        : values.releaseYear;
     const payload = {
       ...values,
-      releaseYear: values.releaseYear,
+      releaseYear: year,
+      releaseDate: values.releaseDate,
       approbation: values.approbation,
       budget: strCurrencyToNumber(values.budget),
       revenue: strCurrencyToNumber(values.revenue),
@@ -388,24 +398,50 @@ export const FormMoviesData = ({
               <div className="grid grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
-                  name="releaseYear"
+                  name="releaseDate"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ano</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          className="bg-bg text-fg"
-                          name={field.name}
-                          ref={field.ref}
-                          value={field.value ?? new Date().getFullYear()}
-                          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            field.onChange(parseNumberOrUndefined(e))
-                          }
-                          onBlur={field.onBlur}
-                          disabled={submitting}
-                        />
-                      </FormControl>
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Lançamento</FormLabel>
+
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <AppButton
+                            type="button"
+                            variant="outline"
+                            className={cx(
+                              "w-full justify-start text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                            disabled={submitting}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value ? (
+                              format(field.value, "dd/MM/yyyy")
+                            ) : (
+                              <span>Escolha uma data</span>
+                            )}
+                          </AppButton>
+                        </PopoverTrigger>
+
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value ?? undefined}
+                            onSelect={(d) => {
+                              field.onChange(d);
+                              if (d) {
+                                form.setValue("releaseDate", d, {
+                                  shouldDirty: true,
+                                  shouldTouch: true,
+                                  shouldValidate: true,
+                                });
+                              }
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+
                       <FormMessage />
                     </FormItem>
                   )}
@@ -416,6 +452,59 @@ export const FormMoviesData = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Duração (min)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          className="bg-bg text-fg"
+                          name={field.name}
+                          ref={field.ref}
+                          value={field.value ?? ""}
+                          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            field.onChange(parseNumberOrUndefined(e))
+                          }
+                          onBlur={field.onBlur}
+                          placeholder="Opcional"
+                          disabled={submitting}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="popularity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Popularidade</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          className="bg-bg text-fg"
+                          name={field.name}
+                          ref={field.ref}
+                          value={field.value ?? ""}
+                          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                            field.onChange(parseNumberOrUndefined(e))
+                          }
+                          onBlur={field.onBlur}
+                          placeholder="Opcional"
+                          disabled={submitting}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="voteCount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantidade de votos</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
