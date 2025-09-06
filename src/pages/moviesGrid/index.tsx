@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 
@@ -25,8 +26,39 @@ import {
   getPageCount,
   buildPageNumbers,
 } from "./utils";
-import { getMovies } from "@/service/moviesApi";
+import { getMovies, createMovie } from "@/service/moviesApi";
 import type { MovieData } from "@/service/movies";
+import { toast } from "sonner";
+
+const initialValues: FormMoviesValues = {
+  title: "",
+  originalTitle: "",
+  subtitle: "",
+  releaseYear: new Date().getFullYear(),
+  runtimeMinutes: undefined,
+  genres: [],
+  posterFile: undefined,
+  trailerUrl: "",
+  overview: "",
+  contentRating: "ALL_AGES",
+  status: "RELEASED",
+  budget: undefined,
+  revenue: undefined,
+  profit: undefined,
+  studioId: "",
+  approbation: 50,
+};
+
+type GenresArray = { id: string; name: string };
+
+function pickGenreNames(
+  genres: string[] | GenresArray[] | null | undefined
+): string[] {
+  if (!Array.isArray(genres)) return [];
+  return genres
+    .map((g) => (typeof g === "string" ? g : g?.name))
+    .filter((n): n is string => Boolean(n));
+}
 
 export default function MoviesPage() {
   const [all, setAll] = useState<MovieData[] | null>(null);
@@ -58,10 +90,10 @@ export default function MoviesPage() {
   );
 
   async function handleCreateMovie(values: FormMoviesValues) {
-    void values;
-
     try {
+      await createMovie(values);
       await fetchList();
+      toast.success("Filme criado com sucesso!");
       setPage(1);
       setOpenNew(false);
     } catch (e) {
@@ -104,8 +136,8 @@ export default function MoviesPage() {
               key={m.id}
               title={m.title}
               posterUrl={m.posterUrl}
-              genres={m.genres}
-              year={m.year}
+              genres={pickGenreNames(m.genres as any)}
+              releaseYear={m.releaseYear}
               rating={m.rating}
               to={`/movies/${m.id}`}
             />
@@ -167,6 +199,7 @@ export default function MoviesPage() {
         open={openNew}
         onOpenChange={setOpenNew}
         onSubmit={handleCreateMovie}
+        defaultValues={initialValues}
       />
     </div>
   );

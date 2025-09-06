@@ -17,9 +17,11 @@ export interface MovieDTO {
   posterUrl?: string | null;
   backdropUrl?: string | null;
   trailerUrl?: string | null;
-  genres?: Array<{ id?: number | string; name: string }>;
+  genres?: Array<{ id: string; name: string }>;
   createdAt?: string;
   updatedAt?: string;
+  studioId: string;
+  approbation?: number;
 }
 export type ContentRating =
   | "ALL_AGES"

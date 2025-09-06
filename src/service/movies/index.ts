@@ -1,7 +1,7 @@
 export interface MovieData {
   id: string;
   title: string;
-  year: number;
+  releaseYear: number;
   posterUrl: string;
   genres: string[];
   rating: number;

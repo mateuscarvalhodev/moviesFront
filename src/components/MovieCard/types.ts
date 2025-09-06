@@ -6,7 +6,7 @@ export type MovieCardProps = {
   title: string;
   posterUrl: string;
   genres?: string[];
-  year?: number | string;
+  releaseYear?: number | string;
   rating?: number;
   ratingScale?: RatingScale;
   to?: string;

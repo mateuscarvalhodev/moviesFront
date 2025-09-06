@@ -14,7 +14,7 @@ export function filterMovies(
     (m) =>
       m.title.toLowerCase().includes(q) ||
       m.genres?.some((g) => g.toLowerCase().includes(q)) ||
-      String(m.year).includes(q)
+      String(m.releaseYear).includes(q)
   );
 }
 
@@ -75,7 +75,7 @@ export function makeMovieFromForm(values: FormMoviesValues): MovieData {
   return {
     id: generateId(),
     title: values.title,
-    year: values.year,
+    releaseYear: values.releaseYear,
     posterUrl,
     genres: parseGenres(values.genres),
     rating: 70,

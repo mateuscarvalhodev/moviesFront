@@ -8,7 +8,7 @@ export const MovieCard = ({
   title,
   posterUrl,
   genres = [],
-  year,
+  releaseYear,
   rating,
   ratingScale = "percent",
   to,
@@ -117,9 +117,7 @@ export const MovieCard = ({
                 group-hover:opacity-100 group-hover:max-h-12 group-hover:translate-y-0
               "
             >
-              {[genres.slice(0, 3).join(", "), year]
-                .filter(Boolean)
-                .join(" • ")}
+              {[genres.join(", "), releaseYear].filter(Boolean).join(" • ")}
             </p>
           </div>
         </div>

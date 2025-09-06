@@ -14,7 +14,7 @@ function buildMoviePayload(values: FormMoviesValues): CreateMoviePayload {
     subtitle: values.subtitle || undefined,
     overview: values.overview || undefined,
     runtimeMinutes: values.runtimeMinutes ?? undefined,
-    releaseYear: values.year,
+    releaseYear: values.releaseYear,
     contentRating: values.contentRating,
     status: values.status,
     budget: values.budget ?? undefined,
@@ -79,6 +79,24 @@ export async function createMovie(values: FormMoviesValues): Promise<MovieDTO> {
   }
 
   const { data } = await api.post<MovieDTO>("/movies/create", payload, {
+    headers: { "Content-Type": "application/json" },
+  });
+  return data;
+}
+
+export async function editMovie(
+  id: string,
+  values: FormMoviesValues
+): Promise<MovieDTO> {
+  const payload = buildMoviePayload(values);
+
+  if (values.posterFile) {
+    const form = buildMovieFormData(payload, values.posterFile);
+    const { data } = await api.put<MovieDTO>(`/movies/${id}`, form);
+    return data;
+  }
+
+  const { data } = await api.put<MovieDTO>(`/movies/${id}`, payload, {
     headers: { "Content-Type": "application/json" },
   });
   return data;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { useEffect, useState, type ChangeEvent } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm, type Resolver, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronsUpDown } from "lucide-react";
 
@@ -25,11 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AppButton } from "@/components/Button";
-import {
-  createMovie,
-  getMoviesStudios,
-  getMoviesGenres,
-} from "@/service/moviesApi";
+import { getMoviesStudios, getMoviesGenres } from "@/service/moviesApi";
 import type { GenresDTO, StudioDTO } from "@/service/moviesApi/types";
 import {
   Popover,
@@ -44,8 +40,8 @@ import {
   CommandInput,
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import { Slider } from "../ui/slider";
+import { formatUSD, parseCurrencyInput } from "./utils";
 
 type Studio = { id: string; name: string };
 
@@ -72,12 +68,20 @@ const ContentRatingEnum = z.enum([
   "AGE_16",
   "AGE_18",
 ]);
+const moneyField = z.preprocess((v) => {
+  if (typeof v === "string") {
+    const cleaned = v.replace(/[^\d.-]/g, "");
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : undefined;
+  }
+  return v;
+}, z.number().nonnegative().optional());
 
 const schema = z.object({
   title: z.string().min(1, "Informe o título"),
   originalTitle: z.string().min(1, "Informe o título original"),
   subtitle: z.string().optional(),
-  year: z.number().int().min(1888).max(2100),
+  releaseYear: z.number().int().min(1888).max(2100),
   runtimeMinutes: z.number().int().positive().optional(),
   genres: z.array(z.string()).default([]),
   posterFile: fileSchema.optional(),
@@ -85,9 +89,12 @@ const schema = z.object({
   overview: z.string().optional(),
   contentRating: ContentRatingEnum,
   status: StatusEnum,
-  budget: z.number().nonnegative().optional(),
-  revenue: z.number().nonnegative().optional(),
-  profit: z.number().nonnegative().optional(),
+  budget: moneyField,
+  revenue: moneyField,
+  profit: moneyField,
+  // budget: z.number().nonnegative().optional(),
+  // revenue: z.number().nonnegative().optional(),
+  // profit: z.number().nonnegative().optional(),
   studioId: z.string().uuid("Selecione um estúdio válido"),
   approbation: z.number().int().min(1).max(100),
 });
@@ -98,7 +105,7 @@ export type FormMoviesValues = z.output<typeof schema>;
 interface FormMoviesDataProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit?: (values: FormMoviesValues) => void | Promise<void>;
+  onSubmit: (values: FormMoviesValues) => void | Promise<void>;
   defaultValues?: Partial<FormMoviesInput>;
 }
 
@@ -212,6 +219,7 @@ export const FormMoviesData = ({
   }
 
   useEffect(() => {
+    console.log({ defaultValues });
     let mounted = true;
     (async () => {
       setStudiosLoading(true);
@@ -249,33 +257,16 @@ export const FormMoviesData = ({
   const form = useForm<FormMoviesInput, unknown, FormMoviesValues>({
     resolver: zodResolver(schema),
     mode: "onChange",
-    defaultValues: {
-      title: "",
-      originalTitle: "",
-      subtitle: "",
-      year: new Date().getFullYear(),
-      runtimeMinutes: undefined,
-      genres: [],
-      posterFile: undefined,
-      trailerUrl: "",
-      overview: "",
-      contentRating: "ALL_AGES",
-      status: "RELEASED",
-      budget: undefined,
-      revenue: undefined,
-      profit: undefined,
-      studioId: "",
-      approbation: 50,
-      ...defaultValues,
-    } as Partial<FormMoviesInput>,
+    defaultValues: defaultValues as Partial<FormMoviesInput>,
   });
 
   const submitting = form.formState.isSubmitting;
 
   const handleSubmit: SubmitHandler<FormMoviesValues> = async (values) => {
+    console.log({ values });
     const payload = {
       ...values,
-      releaseYear: values.year,
+      releaseYear: values.releaseYear,
       approbation: values.approbation,
       budget: values.budget ?? undefined,
       revenue: values.revenue ?? undefined,
@@ -283,28 +274,10 @@ export const FormMoviesData = ({
     };
     console.log(payload);
 
-    await createMovie(payload);
-    await onSubmit?.(values);
-    toast.success("Filme criado com sucesso!");
+    await onSubmit(values);
     onOpenChange(false);
 
-    form.reset({
-      title: "",
-      originalTitle: "",
-      subtitle: "",
-      year: new Date().getFullYear(),
-      runtimeMinutes: undefined,
-      genres: [],
-      posterFile: undefined,
-      trailerUrl: "",
-      overview: "",
-      contentRating: "ALL_AGES",
-      status: "RELEASED",
-      budget: undefined,
-      revenue: undefined,
-      profit: undefined,
-      studioId: "",
-    });
+    form.reset(defaultValues);
   };
 
   function parseNumberOrUndefined(e: ChangeEvent<HTMLInputElement>) {
@@ -414,7 +387,7 @@ export const FormMoviesData = ({
               <div className="grid grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
-                  name="year"
+                  name="releaseYear"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Ano</FormLabel>
@@ -533,13 +506,14 @@ export const FormMoviesData = ({
                       <FormLabel>Orçamento (USD)</FormLabel>
                       <FormControl>
                         <Input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           className="bg-bg text-fg"
-                          name={field.name}
-                          ref={field.ref}
-                          value={field.value ?? ""}
-                          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            field.onChange(parseNumberOrUndefined(e))
+                          value={formatUSD(field.value as number | undefined)}
+                          onChange={(e) =>
+                            field.onChange(
+                              parseCurrencyInput(e.currentTarget.value)
+                            )
                           }
                           onBlur={field.onBlur}
                           placeholder="Opcional"
@@ -558,13 +532,16 @@ export const FormMoviesData = ({
                       <FormLabel>Receita (USD)</FormLabel>
                       <FormControl>
                         <Input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           className="bg-bg text-fg"
                           name={field.name}
                           ref={field.ref}
-                          value={field.value ?? ""}
-                          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                            field.onChange(parseNumberOrUndefined(e))
+                          value={formatUSD(field.value as number | undefined)}
+                          onChange={(e) =>
+                            field.onChange(
+                              parseCurrencyInput(e.currentTarget.value)
+                            )
                           }
                           onBlur={field.onBlur}
                           placeholder="Opcional"
@@ -581,7 +558,7 @@ export const FormMoviesData = ({
                 name="approbation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Popularidade (1 a 100)</FormLabel>
+                    <FormLabel>Nota: (1 a 100)</FormLabel>
                     <FormControl>
                       <div className="flex items-center gap-3">
                         <div className="flex-1">
@@ -675,7 +652,7 @@ export const FormMoviesData = ({
                       <MultiSelect
                         options={genresList.map((g) => ({
                           label: g.name,
-                          value: g.id.toString(),
+                          value: g.id,
                         }))}
                         value={field.value ?? []}
                         onChange={handleMultiSelectChange}

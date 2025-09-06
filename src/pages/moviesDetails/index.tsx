@@ -11,11 +11,13 @@ import { Metric } from "./components/Metrics";
 
 import type { MovieDetailsData } from "./types";
 import type { MovieDTO } from "@/service/moviesApi/types";
-import { getMovieId, deleteMovie } from "@/service/moviesApi";
+import { getMovieId, deleteMovie, editMovie } from "@/service/moviesApi";
 
-import { FormMoviesData } from "@/components/FormMoviesData";
+import {
+  FormMoviesData,
+  type FormMoviesValues,
+} from "@/components/FormMoviesData";
 
-import { type FormMoviesValues } from "@/components/FormMoviesData";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,11 +60,11 @@ function toNumberOrUndefined(v: unknown): number | undefined {
 function adaptDTO(dto: MovieDTO): MovieDetailsData {
   return {
     title: dto.title,
-    tagline: dto.subtitle ?? dto.originalTitle ?? "",
+    subtitle: dto.subtitle ?? "",
     overview: dto.overview ?? "",
     posterUrl: dto.posterUrl ?? "",
     backdropUrl: dto.backdropUrl ?? undefined,
-    genres: dto.genres?.map((g) => g.name) ?? [],
+    genres: dto.genres?.map((g) => g.id) ?? [],
     rating: undefined,
     releaseDate:
       dto.releaseDate ??
@@ -75,6 +77,11 @@ function adaptDTO(dto: MovieDTO): MovieDetailsData {
     profit: toNumberOrUndefined(dto.profit),
     trailerUrl: extractYouTubeId(dto.trailerUrl),
     originalTitle: dto.originalTitle,
+    studioId: dto.studioId,
+    releaseYear: dto.releaseYear,
+    contentRating: dto.contentRating,
+    approbation: dto.approbation ?? 50,
+    rawGenres: dto.genres ?? [],
   };
 }
 
@@ -127,15 +134,11 @@ export const MovieDetails = () => {
       setIsDeleting(false);
     }
   };
-  // const handleConfirmDelete = async () => {
-  //   if (!id) return;
 
-  //   await deleteMovie(id);
-  //   window.location.replace("/movies");
-  // };
+  const handleEditMovie = async (value: FormMoviesValues) => {
+    if (!id) return;
 
-  const handleEditMovie = async (values: FormMoviesValues) => {
-    setOpenEdit(true);
+    await editMovie(id, value);
   };
 
   if (!data) {
@@ -206,8 +209,8 @@ export const MovieDetails = () => {
               </AlertDialogContent>
             </AlertDialog>
 
-            <AppButton variant="brand" asChild>
-              <AppButton onClick={handleEditMovie}>Editar</AppButton>
+            <AppButton variant="brand" onClick={() => setOpenEdit(true)}>
+              Editar
             </AppButton>
           </div>
         </div>
@@ -234,12 +237,12 @@ export const MovieDetails = () => {
             <div className="mt-5">
               <h3 className="text-sm text-mauve-11">Gêneros</h3>
               <div className="mt-2 flex flex-wrap gap-2">
-                {data.genres.map((g: string) => (
+                {data.rawGenres.map((g) => (
                   <span
-                    key={g}
+                    key={g.id}
                     className="rounded-md border border-purple-10/30 bg-purple-3/30 px-2.5 py-1 text-xs text-white"
                   >
-                    {g}
+                    {g.name}
                   </span>
                 ))}
               </div>
@@ -328,6 +331,7 @@ export const MovieDetails = () => {
         open={openEdit}
         onOpenChange={setOpenEdit}
         onSubmit={handleEditMovie}
+        defaultValues={data}
       />
     </div>
   );
