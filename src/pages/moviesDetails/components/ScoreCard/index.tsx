@@ -12,35 +12,32 @@ export const ScoreCard = ({
   const { dashArray } = getCircleProgress(18, p);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-black/30 p-3 flex items-center justify-between">
-      <span className="text-xs text-mauve-11">NOTA</span>
-      <div
-        className="relative grid place-items-center"
-        style={{ width: 56, height: 56 }}
-      >
-        <svg width="56" height="56" viewBox="0 0 44 44">
-          <circle
-            cx="22"
-            cy="22"
-            r={18}
-            stroke="rgba(255,255,255,0.18)"
-            strokeWidth="4"
-            fill="none"
-          />
-          <circle
-            cx="22"
-            cy="22"
-            r={18}
-            stroke="currentColor"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeDasharray={dashArray}
-            className="text-yellow-400"
-            fill="none"
-          />
-        </svg>
-        <span className="absolute text-xs font-semibold text-white">{p}%</span>
-      </div>
+    <div
+      className="relative grid place-items-center"
+      style={{ width: 56, height: 56 }}
+    >
+      <svg width="56" height="56" viewBox="0 0 44 44">
+        <circle
+          cx="22"
+          cy="22"
+          r={18}
+          stroke="rgba(255,255,255,0.18)"
+          strokeWidth="4"
+          fill="none"
+        />
+        <circle
+          cx="22"
+          cy="22"
+          r={18}
+          stroke="currentColor"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeDasharray={dashArray}
+          className="text-yellow-400"
+          fill="none"
+        />
+      </svg>
+      <span className="absolute text-xs font-semibold text-white">{p}%</span>
     </div>
   );
 };

@@ -81,9 +81,6 @@ const schema = z.object({
   overview: z.string().optional(),
   contentRating: ContentRatingEnum,
   status: StatusEnum,
-  // budget: moneyField,
-  // revenue: moneyField,
-  // profit: moneyField,
   budget: z.string().optional(),
   revenue: z.string().optional(),
   profit: z.string().optional(),
@@ -94,7 +91,10 @@ const schema = z.object({
 type FormMoviesInput = z.input<typeof schema>;
 export type FormMoviesValues = z.output<typeof schema>;
 
-type PayloadMovies = Omit<FormMoviesValues, "budget" | "revenue" | "profit"> & {
+export type PayloadMovies = Omit<
+  FormMoviesValues,
+  "budget" | "revenue" | "profit"
+> & {
   budget: number | undefined;
   revenue: number | undefined;
   profit: number | undefined;
@@ -260,7 +260,6 @@ export const FormMoviesData = ({
   const submitting = form.formState.isSubmitting;
 
   const handleSubmit: SubmitHandler<FormMoviesValues> = async (values) => {
-    console.log({ values });
     const payload = {
       ...values,
       releaseYear: values.releaseYear,
@@ -269,7 +268,6 @@ export const FormMoviesData = ({
       revenue: strCurrencyToNumber(values.revenue),
       profit: strCurrencyToNumber(values.profit),
     };
-    console.log({ payload });
 
     await onSubmit(payload);
     onOpenChange(false);

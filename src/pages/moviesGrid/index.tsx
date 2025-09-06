@@ -17,6 +17,7 @@ import {
 import {
   FormMoviesData,
   type FormMoviesValues,
+  type PayloadMovies,
 } from "@/components/FormMoviesData";
 
 import {
@@ -89,7 +90,7 @@ export default function MoviesPage() {
     [page, pageCount]
   );
 
-  async function handleCreateMovie(values: FormMoviesValues) {
+  async function handleCreateMovie(values: PayloadMovies) {
     try {
       await createMovie(values);
       await fetchList();

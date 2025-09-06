@@ -4,7 +4,11 @@ export const fmtUSD = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-export function formatUSD(n: string = ""): string {
+export function formatUSD(n: string | number = ""): string {
+  console.log({ n });
+  if (typeof n == "number") {
+    n = n.toString();
+  }
   const value = n.replace(/\D/g, "");
   if (value == null || Number.isNaN(value)) return "";
   return fmtUSD.format(Number(value));

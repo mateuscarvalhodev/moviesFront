@@ -21,14 +21,14 @@ export type MovieDetailsData = {
   title: string;
   status?: StatusEnumType;
   originalLanguage?: string;
-  budget?: number;
-  revenue?: number;
+  budget?: string;
+  revenue?: string;
   backdropUrl?: string;
   trailerUrl?: string;
   rating?: string;
   posterUrl?: string;
   genres: string[];
-  profit?: number;
+  profit?: string;
   contentRating?: ContentRatingEnumType;
   studioId: string;
   subtitle?: string;

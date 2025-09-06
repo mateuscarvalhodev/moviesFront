@@ -1,4 +1,4 @@
-import type { FormMoviesValues } from "@/components/FormMoviesData";
+import type { PayloadMovies } from "@/components/FormMoviesData";
 import api from "..";
 import type {
   CreateMoviePayload,
@@ -7,7 +7,8 @@ import type {
   StudioDTO,
 } from "./types";
 
-function buildMoviePayload(values: FormMoviesValues): CreateMoviePayload {
+function buildMoviePayload(values: PayloadMovies): CreateMoviePayload {
+  // function buildMoviePayload(values: FormMoviesValues): CreateMoviePayload {
   return {
     title: values.title,
     originalTitle: values.originalTitle,
@@ -69,7 +70,7 @@ function buildMovieFormData(
   return fd;
 }
 
-export async function createMovie(values: FormMoviesValues): Promise<MovieDTO> {
+export async function createMovie(values: PayloadMovies): Promise<MovieDTO> {
   const payload = buildMoviePayload(values);
 
   if (values.posterFile) {
@@ -86,7 +87,7 @@ export async function createMovie(values: FormMoviesValues): Promise<MovieDTO> {
 
 export async function editMovie(
   id: string,
-  values: FormMoviesValues
+  values: PayloadMovies
 ): Promise<MovieDTO> {
   const payload = buildMoviePayload(values);
 

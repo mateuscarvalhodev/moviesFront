@@ -1,12 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams } from "react-router";
 import { AppButton } from "@/components/Button";
-import {
-  formatRuntime,
-  moneyUSD,
-  normalizeRatingPercent,
-  getCircleProgress,
-} from "./utils";
+import { formatRuntime, moneyUSD, getCircleProgress } from "./utils";
 import { Metric } from "./components/Metrics";
 
 import type { MovieDetailsData } from "./types";
@@ -15,8 +10,11 @@ import { getMovieId, deleteMovie, editMovie } from "@/service/moviesApi";
 
 import {
   FormMoviesData,
-  type FormMoviesValues,
+  // type FormMoviesValues,
+  type PayloadMovies,
 } from "@/components/FormMoviesData";
+
+import { strCurrencyToNumber } from "@/components/FormMoviesData/utils";
 
 import {
   AlertDialog,
@@ -31,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { getErrMsg } from "@/utils/getErrors";
+import { ScoreCard } from "./components/ScoreCard";
 
 function extractYouTubeId(input?: string | null): string | undefined {
   if (!input) return undefined;
@@ -52,11 +51,6 @@ function extractYouTubeId(input?: string | null): string | undefined {
   }
 }
 
-function toNumberOrUndefined(v: unknown): number | undefined {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : undefined;
-}
-
 function adaptDTO(dto: MovieDTO): MovieDetailsData {
   return {
     title: dto.title,
@@ -72,9 +66,9 @@ function adaptDTO(dto: MovieDTO): MovieDetailsData {
     runtimeMinutes: dto.runtimeMinutes ?? undefined,
     status: dto.status ?? undefined,
     originalLanguage: dto.originalLanguage ?? undefined,
-    budget: toNumberOrUndefined(dto.budget),
-    revenue: toNumberOrUndefined(dto.revenue),
-    profit: toNumberOrUndefined(dto.profit),
+    budget: dto.budget?.toString(),
+    revenue: dto.revenue?.toString(),
+    profit: dto.profit?.toString(),
     trailerUrl: extractYouTubeId(dto.trailerUrl),
     originalTitle: dto.originalTitle,
     studioId: dto.studioId,
@@ -92,23 +86,23 @@ export const MovieDetails = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
+  const getMovie = useCallback(() => {
     if (!id) return;
     getMovieId(id)
       .then((dto) => setData(adaptDTO(dto)))
       .catch(() => setData(null));
   }, [id]);
 
-  const ratingPercent = useMemo(
-    () => normalizeRatingPercent(Number(data?.rating)),
-    [data?.rating]
-  );
+  useEffect(() => {
+    getMovie();
+  }, [getMovie]);
 
   const RADIUS = 18;
-  const { dashArray } = useMemo(() => {
-    const p = ratingPercent ?? 0;
+  const approbationPercent = data?.approbation ?? 0;
+  useMemo(() => {
+    const p = approbationPercent ?? 0;
     return getCircleProgress(RADIUS, p);
-  }, [ratingPercent]);
+  }, [approbationPercent]);
 
   const releaseDisplay = useMemo(() => {
     const d = data?.releaseDate;
@@ -135,10 +129,12 @@ export const MovieDetails = () => {
     }
   };
 
-  const handleEditMovie = async (value: FormMoviesValues) => {
+  const handleEditMovie = async (value: PayloadMovies) => {
     if (!id) return;
 
     await editMovie(id, value);
+    getMovie();
+    toast.success("Filme editado com sucesso");
   };
 
   if (!data) {
@@ -253,32 +249,9 @@ export const MovieDetails = () => {
             <div className="relative grid grid-cols-2 gap-3 pr-20">
               <Metric label="POPULARIDADE" value="—" />
               <Metric label="VOTOS" value="—" />
-              {ratingPercent != null && (
-                <div className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 grid place-items-center drop-shadow">
-                  <svg width="64" height="64" viewBox="0 0 44 44">
-                    <circle
-                      cx="22"
-                      cy="22"
-                      r={RADIUS}
-                      stroke="rgba(255,255,255,0.18)"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <circle
-                      cx="22"
-                      cy="22"
-                      r={RADIUS}
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      strokeLinecap="round"
-                      strokeDasharray={dashArray}
-                      className="text-yellow-400"
-                      fill="none"
-                    />
-                  </svg>
-                  <span className="absolute text-sm font-semibold text-white">
-                    {ratingPercent}%
-                  </span>
+              {data.approbation != null && (
+                <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                  <ScoreCard percent={data.approbation} />
                 </div>
               )}
             </div>
@@ -298,11 +271,20 @@ export const MovieDetails = () => {
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <Metric label="ORÇAMENTO" value={moneyUSD(data.budget)} />
-                <Metric label="RECEITA" value={moneyUSD(data.revenue)} />
+                <Metric
+                  label="ORÇAMENTO"
+                  value={moneyUSD(strCurrencyToNumber(data.budget))}
+                />
+                <Metric
+                  label="RECEITA"
+                  value={moneyUSD(strCurrencyToNumber(data.revenue))}
+                />
                 <Metric
                   label="LUCRO"
-                  value={moneyUSD((data.revenue ?? 0) - (data.budget ?? 0))}
+                  value={moneyUSD(
+                    (strCurrencyToNumber(data.revenue) ?? 0) -
+                      (strCurrencyToNumber(data.budget) ?? 0)
+                  )}
                 />
               </div>
             </div>
