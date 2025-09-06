@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { useEffect, useState, type ChangeEvent } from "react";
-import { useForm, type Resolver, type SubmitHandler } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronsUpDown } from "lucide-react";
 
@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "../ui/slider";
-import { formatUSD, parseCurrencyInput } from "./utils";
+import { formatUSD, strCurrencyToNumber } from "./utils";
 
 type Studio = { id: string; name: string };
 
@@ -68,14 +68,6 @@ const ContentRatingEnum = z.enum([
   "AGE_16",
   "AGE_18",
 ]);
-const moneyField = z.preprocess((v) => {
-  if (typeof v === "string") {
-    const cleaned = v.replace(/[^\d.-]/g, "");
-    const n = Number(cleaned);
-    return Number.isFinite(n) ? n : undefined;
-  }
-  return v;
-}, z.number().nonnegative().optional());
 
 const schema = z.object({
   title: z.string().min(1, "Informe o título"),
@@ -89,12 +81,12 @@ const schema = z.object({
   overview: z.string().optional(),
   contentRating: ContentRatingEnum,
   status: StatusEnum,
-  budget: moneyField,
-  revenue: moneyField,
-  profit: moneyField,
-  // budget: z.number().nonnegative().optional(),
-  // revenue: z.number().nonnegative().optional(),
-  // profit: z.number().nonnegative().optional(),
+  // budget: moneyField,
+  // revenue: moneyField,
+  // profit: moneyField,
+  budget: z.string().optional(),
+  revenue: z.string().optional(),
+  profit: z.string().optional(),
   studioId: z.string().uuid("Selecione um estúdio válido"),
   approbation: z.number().int().min(1).max(100),
 });
@@ -102,10 +94,15 @@ const schema = z.object({
 type FormMoviesInput = z.input<typeof schema>;
 export type FormMoviesValues = z.output<typeof schema>;
 
+type PayloadMovies = Omit<FormMoviesValues, "budget" | "revenue" | "profit"> & {
+  budget: number | undefined;
+  revenue: number | undefined;
+  profit: number | undefined;
+};
 interface FormMoviesDataProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: FormMoviesValues) => void | Promise<void>;
+  onSubmit: (values: PayloadMovies) => void | Promise<void>;
   defaultValues?: Partial<FormMoviesInput>;
 }
 
@@ -268,13 +265,13 @@ export const FormMoviesData = ({
       ...values,
       releaseYear: values.releaseYear,
       approbation: values.approbation,
-      budget: values.budget ?? undefined,
-      revenue: values.revenue ?? undefined,
-      profit: values.profit ?? undefined,
+      budget: strCurrencyToNumber(values.budget),
+      revenue: strCurrencyToNumber(values.revenue),
+      profit: strCurrencyToNumber(values.profit),
     };
-    console.log(payload);
+    console.log({ payload });
 
-    await onSubmit(values);
+    await onSubmit(payload);
     onOpenChange(false);
 
     form.reset(defaultValues);
@@ -509,11 +506,9 @@ export const FormMoviesData = ({
                           type="text"
                           inputMode="numeric"
                           className="bg-bg text-fg"
-                          value={formatUSD(field.value as number | undefined)}
+                          value={formatUSD(field.value)}
                           onChange={(e) =>
-                            field.onChange(
-                              parseCurrencyInput(e.currentTarget.value)
-                            )
+                            field.onChange(e.currentTarget.value)
                           }
                           onBlur={field.onBlur}
                           placeholder="Opcional"
@@ -537,11 +532,9 @@ export const FormMoviesData = ({
                           className="bg-bg text-fg"
                           name={field.name}
                           ref={field.ref}
-                          value={formatUSD(field.value as number | undefined)}
+                          value={formatUSD(field.value)}
                           onChange={(e) =>
-                            field.onChange(
-                              parseCurrencyInput(e.currentTarget.value)
-                            )
+                            field.onChange(e.currentTarget.value)
                           }
                           onBlur={field.onBlur}
                           placeholder="Opcional"
