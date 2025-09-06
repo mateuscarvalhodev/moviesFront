@@ -314,6 +314,7 @@ export const MovieDetails = () => {
         onOpenChange={setOpenEdit}
         onSubmit={handleEditMovie}
         defaultValues={data}
+        mode="edit"
       />
     </div>
   );

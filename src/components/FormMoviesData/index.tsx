@@ -104,6 +104,7 @@ interface FormMoviesDataProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: PayloadMovies) => void | Promise<void>;
   defaultValues?: Partial<FormMoviesInput>;
+  mode?: "create" | "edit";
 }
 
 function cx(...cls: Array<string | false | null | undefined>) {
@@ -198,7 +199,9 @@ export const FormMoviesData = ({
   onOpenChange,
   onSubmit,
   defaultValues,
+  mode = "create",
 }: FormMoviesDataProps) => {
+  const isEdit = mode === "edit";
   const [studios, setStudios] = useState<Studio[]>([]);
   const [genresList, setGenresList] = useState<GenresDTO[]>([]);
   const [studiosLoading, setStudiosLoading] = useState(false);
@@ -271,8 +274,9 @@ export const FormMoviesData = ({
 
     await onSubmit(payload);
     onOpenChange(false);
-
-    form.reset(defaultValues);
+    if (!isEdit) {
+      form.reset(defaultValues);
+    }
   };
 
   function parseNumberOrUndefined(e: ChangeEvent<HTMLInputElement>) {
@@ -295,8 +299,10 @@ export const FormMoviesData = ({
         className="w-[420px] sm:w-[520px] bg-bg-elev text-fg h-dvh overflow-y-auto"
       >
         <SheetHeader>
-          <SheetTitle>Novo filme</SheetTitle>
-          <SheetDescription>Adicione um filme.</SheetDescription>
+          <SheetTitle>{isEdit ? "Editar filme" : "Novo filme"}</SheetTitle>
+          <SheetDescription>
+            {isEdit ? "Atualize as informações do filme" : "Adicione um filme."}
+          </SheetDescription>
         </SheetHeader>
 
         <div className="mt-4 p-4">
