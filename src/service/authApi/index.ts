@@ -19,3 +19,7 @@ export async function loginUser(payload: LoginPayload): Promise<AuthResponse> {
   });
   return data;
 }
+
+export async function logout(): Promise<void> {
+  await api.delete("/auth/logout");
+}

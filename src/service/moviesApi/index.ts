@@ -84,6 +84,10 @@ export async function createMovie(values: FormMoviesValues): Promise<MovieDTO> {
   return data;
 }
 
+export async function deleteMovie(id: string): Promise<void> {
+  await api.delete(`/movies/${id}`);
+}
+
 export async function getMovies(params: Record<string, string>) {
   const { data } = await api.get("/movies", { params });
   return data.items;

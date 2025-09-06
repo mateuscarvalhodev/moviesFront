@@ -1,9 +1,45 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 import backgroundMovies from "@/assets/backgroundMovies.png";
 import logoMovies from "@/assets/logoMovies.png";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { AppButton } from "../Button";
+import { logout } from "@/service/authApi";
 
+function isAuthenticated() {
+  return Boolean(sessionStorage.getItem("accessToken"));
+}
+
+function signOut() {
+  try {
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("refreshToken");
+    sessionStorage.removeItem("user");
+    logout();
+  } catch {
+    /* */
+  }
+  window.location.replace("/auth/login");
+}
 export function Layout({ children }: { children: ReactNode }) {
+  const [logged, setLogged] = useState<boolean>(isAuthenticated());
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key) return;
+      if (["accessToken", "refreshToken", "user"].includes(e.key)) {
+        setLogged(isAuthenticated());
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    const onAuthChanged = () => setLogged(isAuthenticated());
+    window.addEventListener("auth:changed", onAuthChanged);
+
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("auth:changed", onAuthChanged);
+    };
+  }, []);
   return (
     <div className="relative isolate min-h-dvh flex flex-col bg-bg text-fg">
       <div className="absolute inset-0 z-0">
@@ -30,7 +66,14 @@ export function Layout({ children }: { children: ReactNode }) {
             Movies
           </span>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          {logged && (
+            <AppButton variant="brand" onClick={signOut}>
+              Deslogar
+            </AppButton>
+          )}
+          <ThemeToggle />
+        </div>
       </header>
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">

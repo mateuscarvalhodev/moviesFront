@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, Link } from "react-router";
+import { useParams } from "react-router";
 import { AppButton } from "@/components/Button";
 import {
   formatRuntime,
@@ -11,7 +11,24 @@ import { Metric } from "./components/Metrics";
 
 import type { MovieDetailsData } from "./types";
 import type { MovieDTO } from "@/service/moviesApi/types";
-import { getMovieId } from "@/service/moviesApi";
+import { getMovieId, deleteMovie } from "@/service/moviesApi";
+
+import { FormMoviesData } from "@/components/FormMoviesData";
+
+import { type FormMoviesValues } from "@/components/FormMoviesData";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { getErrMsg } from "@/utils/getErrors";
 
 function extractYouTubeId(input?: string | null): string | undefined {
   if (!input) return undefined;
@@ -64,6 +81,9 @@ function adaptDTO(dto: MovieDTO): MovieDetailsData {
 export const MovieDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<MovieDetailsData | null>(null);
+  const [openEdit, setOpenEdit] = useState<boolean>(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -93,6 +113,31 @@ export const MovieDetails = () => {
     return d;
   }, [data?.releaseDate]);
 
+  const handleConfirmDelete = async (): Promise<void> => {
+    if (!id) return;
+    try {
+      setIsDeleting(true);
+      await deleteMovie(id);
+      toast.success("Filme deletado com sucesso.");
+      setConfirmOpen(false);
+      window.location.replace("/movies");
+    } catch (err: unknown) {
+      toast.error("Falha ao deletar filme", { description: getErrMsg(err) });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+  // const handleConfirmDelete = async () => {
+  //   if (!id) return;
+
+  //   await deleteMovie(id);
+  //   window.location.replace("/movies");
+  // };
+
+  const handleEditMovie = async (values: FormMoviesValues) => {
+    setOpenEdit(true);
+  };
+
   if (!data) {
     return (
       <div className="mx-auto w-full max-w-[1200px] px-4 py-8">
@@ -117,14 +162,52 @@ export const MovieDetails = () => {
         <div className="flex items-start justify-between gap-4">
           <h1 className="text-3xl font-bold text-white">{data.title}</h1>
           <div className="flex items-center gap-3">
-            <AppButton
-              variant="danger"
-              className="bg-mauve-6/40 border border-mauve-10/30 text-mauve-12 hover:bg-mauve-7/40"
+            <AlertDialog
+              open={confirmOpen}
+              onOpenChange={(o) => !isDeleting && setConfirmOpen(o)}
             >
-              Deletar
-            </AppButton>
-            <AppButton variant="subtle" asChild>
-              <Link to={`/movies/${id}/edit`}>Editar</Link>
+              <AlertDialogTrigger asChild>
+                <AppButton
+                  className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                  onClick={() => setConfirmOpen(true)}
+                >
+                  Deletar
+                </AppButton>
+              </AlertDialogTrigger>
+
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Essa ação não pode ser desfeita. Isso vai remover{" "}
+                    <b>{data.title}</b> permanentemente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <AlertDialogFooter>
+                  <AlertDialogCancel
+                    disabled={isDeleting}
+                    className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                  >
+                    Cancelar
+                  </AlertDialogCancel>
+
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground"
+                    disabled={isDeleting}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      await handleConfirmDelete();
+                    }}
+                  >
+                    {isDeleting ? "Deletando..." : "Confirmar"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AppButton variant="brand" asChild>
+              <AppButton onClick={handleEditMovie}>Editar</AppButton>
             </AppButton>
           </div>
         </div>
@@ -241,6 +324,11 @@ export const MovieDetails = () => {
           </div>
         </section>
       </div>
+      <FormMoviesData
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        onSubmit={handleEditMovie}
+      />
     </div>
   );
 };
