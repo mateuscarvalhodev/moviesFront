@@ -59,6 +59,9 @@ function buildMovieFormData(
   appendIfDefined(fd, "profit", payload.profit);
   appendIfDefined(fd, "trailerUrl", payload.trailerUrl);
   appendIfDefined(fd, "approbation", payload.approbation);
+  appendIfDefined(fd, "popularity", payload.popularity);
+  appendIfDefined(fd, "voteCount", payload.voteCount);
+  appendIfDefined(fd, "releaseDate", payload.releaseDate);
 
   if (payload.genres && payload.genres.length) {
     for (const g of payload.genres) {
@@ -110,9 +113,9 @@ export async function deleteMovie(id: string): Promise<void> {
   await api.delete(`/movies/${id}`);
 }
 
-export async function getMovies(params: Record<string, string>) {
+export async function getMovies(params: Record<string, string | number>) {
   const { data } = await api.get("/movies", { params });
-  return data.items;
+  return data;
 }
 
 export async function getMovieId(id: string): Promise<MovieDTO> {

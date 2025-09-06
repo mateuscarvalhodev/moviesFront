@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Search } from "lucide-react";
-
+import { FiltersSheet } from "./components/FiltersSheet";
 import { MovieCard } from "@/components/MovieCard";
 import { Input } from "@/components/ui/input";
 import { AppButton } from "@/components/Button";
@@ -20,16 +20,12 @@ import {
   type PayloadMovies,
 } from "@/components/FormMoviesData";
 
-import {
-  PAGE_SIZE,
-  filterMovies,
-  paginate,
-  getPageCount,
-  buildPageNumbers,
-} from "./utils";
+import { PAGE_SIZE, getPageCount, buildPageNumbers } from "./utils";
 import { getMovies, createMovie } from "@/service/moviesApi";
 import type { MovieData } from "@/service/movies";
 import { toast } from "sonner";
+import { LoadingOverlay } from "@/components/Loading";
+import { useDebounced } from "@/hooks/useDebounce";
 
 const initialValues: FormMoviesValues = {
   title: "",
@@ -50,6 +46,16 @@ const initialValues: FormMoviesValues = {
   approbation: 50,
 };
 
+export type MovieFilters = {
+  q?: string;
+  startYear?: number;
+  endYear?: number;
+  runtimeMin?: number;
+  runtimeMax?: number;
+  studioId?: string;
+  genreId?: string;
+};
+
 type GenresArray = { id: string; name: string };
 
 function pickGenreNames(
@@ -62,29 +68,42 @@ function pickGenreNames(
 }
 
 export default function MoviesPage() {
-  const [all, setAll] = useState<MovieData[] | null>(null);
+  const [all, setAll] = useState<MovieData[]>([]);
   const [openNew, setOpenNew] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
   const [query, setQuery] = useState("");
+  const [filters, setFilters] = useState<MovieFilters>({ q: query });
   const [page, setPage] = useState(1);
+  const [openFilters, setOpenFilters] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const debouncedSearch = useDebounced(query, 500);
 
-  async function fetchList() {
-    const list = await getMovies({});
-    setAll(list as MovieData[]);
-  }
+  const fetchList = useCallback(async () => {
+    setLoading(true);
+    const { items, total } = await getMovies({
+      ...filters,
+      page,
+      pageSize: PAGE_SIZE,
+    });
+    setTotalItems(total);
+    setAll(items as MovieData[]);
+    setLoading(false);
+  }, [page, filters]);
 
   useEffect(() => {
     fetchList();
-  }, []);
+  }, [fetchList]);
 
-  const filtered = useMemo(() => filterMovies(all, query), [all, query]);
+  useEffect(() => {
+    setFilters((prev) => ({ ...prev, q: debouncedSearch }));
+    setPage(1);
+  }, [debouncedSearch]);
+
   const pageCount = useMemo(
-    () => getPageCount(filtered?.length ?? 0, PAGE_SIZE),
-    [filtered]
+    () => getPageCount(totalItems ?? 0, PAGE_SIZE),
+    [totalItems]
   );
-  const items = useMemo(
-    () => paginate<MovieData>(filtered, page, PAGE_SIZE),
-    [filtered, page]
-  );
+  const items = useMemo(() => all, [all]);
   const numbers = useMemo(
     () => buildPageNumbers(page, pageCount),
     [page, pageCount]
@@ -95,7 +114,7 @@ export default function MoviesPage() {
       await createMovie(values);
       await fetchList();
       toast.success("Filme criado com sucesso!");
-      setPage(1);
+      setFilters((prev) => ({ ...prev, page: 1 }));
       setOpenNew(false);
     } catch (e) {
       console.error("Falha ao atualizar a lista local após criação:", e);
@@ -108,20 +127,20 @@ export default function MoviesPage() {
         <div className="relative flex-1">
           <Input
             value={query}
-            onChange={(e) => {
-              setPage(1);
-              setQuery(e.target.value);
-            }}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder="Pesquise por filmes"
             className="h-11 pl-11 bg-bg-elev text-fg"
           />
           <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-mauve-10" />
         </div>
-        <AppButton variant="subtle">Filtros</AppButton>
+        <AppButton variant="subtle" onClick={() => setOpenFilters(true)}>
+          Filtros
+        </AppButton>
         <AppButton onClick={() => setOpenNew(true)}>Adicionar Filme</AppButton>
       </div>
-
-      {!all ? (
+      {loading ? (
+        <LoadingOverlay />
+      ) : !all ? (
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {Array.from({ length: PAGE_SIZE }).map((_, i) => (
             <div
@@ -145,7 +164,6 @@ export default function MoviesPage() {
           ))}
         </div>
       )}
-
       <Pagination className="mt-2">
         <PaginationContent className="justify-center">
           <PaginationItem>
@@ -153,7 +171,7 @@ export default function MoviesPage() {
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                setPage((p) => Math.max(1, p - 1));
+                setPage(page - 1);
               }}
             />
           </PaginationItem>
@@ -189,18 +207,23 @@ export default function MoviesPage() {
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                setPage((p) => Math.min(pageCount, p + 1));
+                setPage(page + 1);
               }}
             />
           </PaginationItem>
         </PaginationContent>
       </Pagination>
-
       <FormMoviesData
         open={openNew}
         onOpenChange={setOpenNew}
         onSubmit={handleCreateMovie}
         defaultValues={initialValues}
+      />
+      <FiltersSheet
+        open={openFilters}
+        onOpenChange={setOpenFilters}
+        onApply={fetchList}
+        setFilters={setFilters}
       />
     </div>
   );

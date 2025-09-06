@@ -3,21 +3,6 @@ import type { MovieData } from "@/service/movies";
 
 export const PAGE_SIZE = 10;
 
-export function filterMovies(
-  all: MovieData[] | null,
-  query: string
-): MovieData[] | null {
-  if (!all) return null;
-  const q = query.trim().toLowerCase();
-  if (!q) return all;
-  return all.filter(
-    (m) =>
-      m.title.toLowerCase().includes(q) ||
-      m.genres?.some((g) => g.toLowerCase().includes(q)) ||
-      String(m.releaseYear).includes(q)
-  );
-}
-
 export function paginate<T>(
   arr: T[] | null,
   page: number,

@@ -107,7 +107,7 @@ export const MovieDetails = () => {
   const releaseDisplay = useMemo(() => {
     const d = data?.releaseDate;
     if (!d) return "-";
-    const formated = new Date(d).toLocaleDateString();
+    const formated = new Date(d).toLocaleDateString("pt-BR");
     return formated;
   }, [data?.releaseDate]);
 

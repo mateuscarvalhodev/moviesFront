@@ -1,69 +1,100 @@
-# React + TypeScript + Vite
+# Aplicação React (Vite + TypeScript + Tailwind v4 + shadcn/ui) para gestão e visualização de filmes, com autenticação e listagem paginada.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+✅ Requisitos
 
-Currently, two official plugins are available:
+Node.js 22+
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+npm 9+
 
-## Expanding the ESLint configuration
+### Backend/API disponível (https://github.com/mateuscarvalhodev/moviesback)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+🚀 Instalação
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# 1) Instalar dependências
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm i
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+⚙️ Configuração de ambiente
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Com o back end funcionando (link do backEnd acima) Crie um arquivo .env na raiz (ou .env.local) com a URL da API:
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+VITE_API_URL=http://localhost:3000
+
+▶️ Executar em desenvolvimento
+
+```bash
+npm run dev
 ```
+
+Abra a URL exibida no terminal provavelmente http://localhost:5173.
+
+🏗️ Build de produção
+npm run build
+
+### 📦 Principais funcionalidades
+
+- Responsivo
+
+- Tema claro/escuro com alternância por botão (persistido em localStorage)
+
+- Autenticação (Login/Cadastro)
+
+- Rotas protegidas para páginas autenticadas (Listagem/CRUD de filmes)
+
+#### Listagem de filmes com:
+
+- Busca por texto
+
+- Paginação de 10 itens por página
+
+#### Botão de filtros (modal) com:
+
+- Duração (min/max)
+
+- Intervalo de datas (lançamento inicial/final)
+
+- filtro adicional :gênero
+
+- Detalhes do filme (título, título original, descrição, orçamento, data de lançamento etc.)
+
+- Adicionar/Editar filme:
+
+- Se a data de lançamento for no futuro, agenda o envio automático de e-mail no dia da estreia (requer suporte do backend; ver nota abaixo)
+
+#### 📨 Nota sobre envio de e-mail na estreia
+
+- O agendamento do e-mail é disparado ao salvar/editar um filme futuro.
+
+- Job/cron que consulta filmes com releaseDate = hoje
+
+#### 🗺️ Rotas (resumo)
+
+- POST /auth/login — formulário de e-mail/senha; redireciona se já autenticado
+
+- POST /auth/register — nome/e-mail/senha/confirmar;
+
+- GET /movies — listagem protegida, com busca, paginação e filtros
+
+- POST /movies/new — adicionar filme (protegida)
+
+- PUT /movies/:id/ — editar filme (protegida)
+
+- GET/movies/:id — detalhes do filme
+
+#### 🧩 Stack
+
+- React + Vite + TypeScript
+
+- Tailwind v4
+
+- shadcn/ui (componentes + acessibilidade)
+
+- lucide-react (ícones)
+
+- React Router (rotas e proteção)
+
+- Axios (requisições)
+
+- Zod/React Hook Form (validação de formulários)

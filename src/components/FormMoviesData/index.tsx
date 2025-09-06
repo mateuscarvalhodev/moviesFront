@@ -224,7 +224,6 @@ export const FormMoviesData = ({
   }
 
   useEffect(() => {
-    console.log({ defaultValues });
     let mounted = true;
     (async () => {
       setStudiosLoading(true);
