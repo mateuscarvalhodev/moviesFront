@@ -37,7 +37,7 @@ npm run build
 
 - Responsivo
 
-- Tema claro/escuro com alternância por botão (persistido em localStorage)
+- Tema claro/escuro com alternância por botão (persistido em sessionStorage)
 
 - Autenticação (Login/Cadastro)
 
